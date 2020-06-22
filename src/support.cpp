@@ -123,6 +123,13 @@ void* mkl_malloc(size_t alloc_size, int alignment)
     return virt_addr_aligned;
 }
 
+void* mkl_calloc(const size_t num, const size_t size, const int alignment)
+{
+    void * const virt = mkl_malloc(size * num, alignment);
+    memset(virt, 0, size * num);
+    return virt;
+}
+
 void mkl_free(void * const a_ptr)
 {
     if (a_ptr == NULL)

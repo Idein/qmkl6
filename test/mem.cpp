@@ -62,7 +62,15 @@ static
 int test_retain(void)
 {
     constexpr size_t size = UINTMAX_C(0xc0ffee);
-    uint64_t *ptr = (uint64_t*) mkl_malloc(size * sizeof(uint64_t), 4096);
+    uint64_t *ptr = (uint64_t*) mkl_calloc(size, sizeof(uint64_t), 4096);
+
+    for (size_t i = 0; i < size; ++i) {
+        if (ptr[i]) {
+            std::cerr << "error: Memory area provided by calloc is not cleared"
+                    << std::endl;
+            return 1;
+        }
+    }
 
     for (size_t i = 0; i < size; ++i)
         ptr[i] = i;

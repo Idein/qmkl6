@@ -19,6 +19,7 @@ int mkl_set_exit_hander(MKLExitHandler myexit);
 void xerbla(const char *srname, const int *info, int len);
 double dsecond(void);
 void* mkl_malloc(size_t alloc_size, int alignment);
+void* mkl_calloc(size_t num, size_t size, int alignment);
 void mkl_free(void *a_ptr);
 uint64_t mkl_mem_stat(unsigned *AllocatedBuffers);
 
