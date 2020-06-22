@@ -92,7 +92,7 @@ void free_memory(const size_t size, const uint32_t handle, void * const map)
 
 struct memory_area {
     size_t alloc_size;
-    uint32_t handle, bus_addr;
+    uint32_t handle, bus_addr_aligned;
     void *virt_addr;
 };
 
@@ -114,7 +114,7 @@ void* mkl_malloc(size_t alloc_size, int alignment)
     struct memory_area area = {
         .alloc_size = alloc_size,
         .handle = handle,
-        .bus_addr = bus_addr,
+        .bus_addr_aligned = bus_addr + offset,
         .virt_addr = virt_addr,
     };
 
@@ -156,6 +156,18 @@ uint64_t mkl_mem_stat(unsigned *AllocatedBuffers)
     for (auto &mem : memory_map)
         AllocatedBytes += mem.second.alloc_size;
     return AllocatedBytes;
+}
+
+uint32_t locate_bus_addr(void * const virt_addr)
+{
+    const auto area = memory_map.find(virt_addr);
+    if (area == memory_map.end()) {
+        fprintf(stderr, "error: Memory area starting at %p is not known\n",
+                virt_addr);
+        XERBLA(1);
+    }
+
+    return area->second.bus_addr_aligned;
 }
 
 static int ncalls = 0;
