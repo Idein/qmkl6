@@ -6,10 +6,15 @@
 #include <sys/types.h>
 
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+
 /* qmkl6.cpp */
 
-__attribute__((constructor)) void qmkl6_init(void);
-__attribute__((destructor)) void qmkl6_finalize(void);
+void qmkl6_init(void);
+void qmkl6_finalize(void);
 
 /* support.cpp */
 
@@ -23,5 +28,10 @@ void* mkl_calloc(size_t num, size_t size, int alignment);
 void mkl_free(void *a_ptr);
 uint64_t mkl_mem_stat(unsigned *AllocatedBuffers);
 
+
+
+#if defined(__cplusplus)
+}
+#endif
 
 #endif /* _QMKL6_H_ */

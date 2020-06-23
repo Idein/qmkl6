@@ -1,13 +1,18 @@
 #include "qmkl6.h"
-#include "qmkl6_internal.h"
+#include "qmkl6_internal.hpp"
 
 
-void qmkl6_init(void)
+qmkl6_context qmkl6;
+
+qmkl6_context::qmkl6_context(void)
 {
-    qmkl6_init_support();
+    this->init_support();
+
+    this->unif = (uint32_t*) this->alloc_memory(sizeof(uint32_t) * 1024,
+            this->unif_handle, this->unif_bus);
 }
 
-void qmkl6_finalize(void)
+qmkl6_context::~qmkl6_context(void)
 {
-    qmkl6_finalize_support();
+    this->finalize_support();
 }

@@ -14,7 +14,7 @@
 #include <drm_v3d.h>
 
 #include "qmkl6.h"
-#include "qmkl6_internal.h"
+#include "qmkl6_internal.hpp"
 
 
 static MKLExitHandler exit_handler = exit;
@@ -41,22 +41,19 @@ double dsecond(void)
     return t.tv_sec + t.tv_nsec * 1e-9;
 }
 
-static int drm_fd = -1;
-
-static
-void* alloc_memory(const size_t size, uint32_t * const handle,
-        uint32_t * const bus_addr)
+void* qmkl6_context::alloc_memory(const size_t size, uint32_t &handle,
+        uint32_t &bus_addr)
 {
     int ret;
 
-    ret = drm_v3d_create_bo(drm_fd, size, 0, handle, bus_addr);
+    ret = drm_v3d_create_bo(drm_fd, size, 0, &handle, &bus_addr);
     if (ret) {
         fprintf(stderr, "error: drm_v3d_create_bo: %s\n", strerror(errno));
         XERBLA(ret);
     }
 
     uint64_t mmap_offset;
-    ret = drm_v3d_mmap_bo(drm_fd, *handle, 0, &mmap_offset);
+    ret = drm_v3d_mmap_bo(drm_fd, handle, 0, &mmap_offset);
     if (ret) {
         fprintf(stderr, "error: drm_v3d_mmap_bo: %s\n", strerror(errno));
         XERBLA(ret);
@@ -72,8 +69,8 @@ void* alloc_memory(const size_t size, uint32_t * const handle,
     return map;
 }
 
-static
-void free_memory(const size_t size, const uint32_t handle, void * const map)
+void qmkl6_context::free_memory(const size_t size, const uint32_t handle,
+        void * const map)
 {
     int ret;
 
@@ -90,14 +87,6 @@ void free_memory(const size_t size, const uint32_t handle, void * const map)
     }
 }
 
-struct memory_area {
-    size_t alloc_size;
-    uint32_t handle, bus_addr_aligned;
-    void *virt_addr;
-};
-
-static std::unordered_map <void*, struct memory_area> memory_map;
-
 void* mkl_malloc(size_t alloc_size, int alignment)
 {
     if (alignment <= 0 || alignment & (alignment - 1))
@@ -106,19 +95,19 @@ void* mkl_malloc(size_t alloc_size, int alignment)
     alloc_size += alignment - 1;
 
     uint32_t handle, bus_addr;
-    void * const virt_addr = alloc_memory(alloc_size, &handle, &bus_addr);
+    void * const virt_addr = qmkl6.alloc_memory(alloc_size, handle, bus_addr);
 
     const uint32_t offset = ((uint32_t) alignment - bus_addr) & (alignment - 1);
     void * const virt_addr_aligned = (uint8_t*) virt_addr + offset;
 
-    struct memory_area area = {
+    struct qmkl6_context::memory_area area = {
         .alloc_size = alloc_size,
         .handle = handle,
         .bus_addr_aligned = bus_addr + offset,
         .virt_addr = virt_addr,
     };
 
-    memory_map.emplace(virt_addr_aligned, area);
+    qmkl6.memory_map.emplace(virt_addr_aligned, area);
 
     return virt_addr_aligned;
 }
@@ -135,33 +124,33 @@ void mkl_free(void * const a_ptr)
     if (a_ptr == NULL)
         return;
 
-    const auto area = memory_map.find(a_ptr);
-    if (area == memory_map.end()) {
+    const auto area = qmkl6.memory_map.find(a_ptr);
+    if (area == qmkl6.memory_map.end()) {
         fprintf(stderr, "error: Memory area starting at %p is not known\n",
                 a_ptr);
         XERBLA(1);
     }
 
-    free_memory(area->second.alloc_size, area->second.handle,
+    qmkl6.free_memory(area->second.alloc_size, area->second.handle,
             area->second.virt_addr);
 
-    memory_map.erase(area);
+    qmkl6.memory_map.erase(area);
 }
 
 uint64_t mkl_mem_stat(unsigned *AllocatedBuffers)
 {
-    *AllocatedBuffers = memory_map.size();
+    *AllocatedBuffers = qmkl6.memory_map.size();
 
     uint64_t AllocatedBytes = 0;
-    for (auto &mem : memory_map)
+    for (auto &mem : qmkl6.memory_map)
         AllocatedBytes += mem.second.alloc_size;
     return AllocatedBytes;
 }
 
-uint32_t locate_bus_addr(void * const virt_addr)
+uint32_t qmkl6_context::locate_bus_addr(const void * const virt_addr)
 {
-    const auto area = memory_map.find(virt_addr);
-    if (area == memory_map.end()) {
+    const auto area = this->memory_map.find(virt_addr);
+    if (area == this->memory_map.end()) {
         fprintf(stderr, "error: Memory area starting at %p is not known\n",
                 virt_addr);
         XERBLA(1);
@@ -170,32 +159,24 @@ uint32_t locate_bus_addr(void * const virt_addr)
     return area->second.bus_addr_aligned;
 }
 
-static int ncalls = 0;
-
-void qmkl6_init_support(void)
+void qmkl6_context::init_support(void)
 {
-    if (++ncalls != 1)
-        return;
-
     const int fd = open("/dev/dri/card0", O_RDWR);
     if (fd == -1) {
         fprintf(stderr, "error: open: %s\n", strerror(errno));
         XERBLA(fd);
     }
-    drm_fd = fd;
+    this->drm_fd = fd;
 }
 
-void qmkl6_finalize_support(void)
+void qmkl6_context::finalize_support(void)
 {
-    if (--ncalls != 0)
-        return;
-
     int ret;
 
-    ret = close(drm_fd);
+    ret = close(this->drm_fd);
     if (ret) {
         fprintf(stderr, "error: close: %s\n", strerror(errno));
         XERBLA(ret);
     }
-    drm_fd = -1;
+    this->drm_fd = -1;
 }
