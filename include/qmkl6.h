@@ -20,7 +20,7 @@ void qmkl6_finalize(void);
 
 typedef void (*MKLExitHandler)(int why);
 
-int mkl_set_exit_hander(MKLExitHandler myexit);
+int mkl_set_exit_handler(MKLExitHandler myexit);
 void xerbla(const char *srname, const int *info, int len);
 double dsecond(void);
 void* mkl_malloc(size_t alloc_size, int alignment);

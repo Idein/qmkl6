@@ -19,6 +19,7 @@ class qmkl6_context {
 
         /* qmkl6.cpp */
 
+        MKLExitHandler exit_handler = exit;
         uint32_t *unif;
 
         qmkl6_context(void);

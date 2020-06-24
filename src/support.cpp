@@ -17,11 +17,9 @@
 #include "qmkl6_internal.hpp"
 
 
-static MKLExitHandler exit_handler = exit;
-
-int mkl_set_exit_hander(const MKLExitHandler myexit)
+int mkl_set_exit_handler(const MKLExitHandler myexit)
 {
-    exit_handler = (myexit == NULL) ? exit : myexit;
+    qmkl6.exit_handler = (myexit == NULL) ? exit : myexit;
     return 0;
 }
 
@@ -29,7 +27,7 @@ void xerbla(const char * const srname, const int * const info,
         const int len [[maybe_unused]])
 {
     fprintf(stderr, "QMKL6 error: %s: %d\n", srname, *info);
-    exit_handler(EXIT_FAILURE);
+    qmkl6.exit_handler(EXIT_FAILURE);
 }
 
 double dsecond(void)
