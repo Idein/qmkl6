@@ -17,15 +17,7 @@ class qmkl6_context {
 
     public:
 
-        /* qmkl6.cpp */
-
         MKLExitHandler exit_handler = exit;
-        uint32_t *unif;
-
-        qmkl6_context(void);
-        ~qmkl6_context(void);
-
-        /* support.cpp */
 
         struct memory_area {
             size_t alloc_size;
@@ -35,16 +27,27 @@ class qmkl6_context {
 
         std::unordered_map <const void*, struct memory_area> memory_map;
 
+        uint32_t unif_handle;
+        uint32_t unif_bus;
+        uint32_t *unif;
+
+        /* qmkl6.cpp */
+
+        qmkl6_context(void);
+        ~qmkl6_context(void);
+
         void* alloc_memory(size_t size, uint32_t &handle, uint32_t &bus_addr);
         void free_memory(size_t size, uint32_t handle, void *map);
-        uint32_t locate_bus_addr(const void *virt_addr);
+        void locate_virt(const void *virt_addr, uint32_t &handle,
+                uint32_t &bus_addr);
 
     private:
 
-        /* support.cpp */
-
         int drm_fd;
-        uint32_t unif_handle, unif_bus;
+
+        size_t unif_size;
+
+        /* support.cpp */
 
         void init_support(void);
         void finalize_support(void);

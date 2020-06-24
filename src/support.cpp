@@ -4,14 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
-#include <fcntl.h>
-#include <sys/mman.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <unordered_map>
-
-#include <drm_v3d.h>
 
 #include "qmkl6.h"
 #include "qmkl6_internal.hpp"
@@ -37,52 +30,6 @@ double dsecond(void)
     clock_gettime(CLOCK_MONOTONIC, &t);
 
     return t.tv_sec + t.tv_nsec * 1e-9;
-}
-
-void* qmkl6_context::alloc_memory(const size_t size, uint32_t &handle,
-        uint32_t &bus_addr)
-{
-    int ret;
-
-    ret = drm_v3d_create_bo(drm_fd, size, 0, &handle, &bus_addr);
-    if (ret) {
-        fprintf(stderr, "error: drm_v3d_create_bo: %s\n", strerror(errno));
-        XERBLA(ret);
-    }
-
-    uint64_t mmap_offset;
-    ret = drm_v3d_mmap_bo(drm_fd, handle, 0, &mmap_offset);
-    if (ret) {
-        fprintf(stderr, "error: drm_v3d_mmap_bo: %s\n", strerror(errno));
-        XERBLA(ret);
-    }
-
-    void * const map = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_SHARED,
-            drm_fd, mmap_offset);
-    if (map == MAP_FAILED) {
-        fprintf(stderr, "error: mmap: %s\n", strerror(errno));
-        XERBLA(ret);
-    }
-
-    return map;
-}
-
-void qmkl6_context::free_memory(const size_t size, const uint32_t handle,
-        void * const map)
-{
-    int ret;
-
-    ret = munmap(map, size);
-    if (ret) {
-        fprintf(stderr, "error: munmap: %s\n", strerror(errno));
-        XERBLA(ret);
-    }
-
-    ret = drm_gem_close(drm_fd, handle);
-    if (ret) {
-        fprintf(stderr, "error: drm_gem_close: %s\n", strerror(errno));
-        XERBLA(ret);
-    }
 }
 
 void* mkl_malloc(size_t alloc_size, int alignment)
@@ -145,36 +92,10 @@ uint64_t mkl_mem_stat(unsigned *AllocatedBuffers)
     return AllocatedBytes;
 }
 
-uint32_t qmkl6_context::locate_bus_addr(const void * const virt_addr)
-{
-    const auto area = this->memory_map.find(virt_addr);
-    if (area == this->memory_map.end()) {
-        fprintf(stderr, "error: Memory area starting at %p is not known\n",
-                virt_addr);
-        XERBLA(1);
-    }
-
-    return area->second.bus_addr_aligned;
-}
-
 void qmkl6_context::init_support(void)
 {
-    const int fd = open("/dev/dri/card0", O_RDWR);
-    if (fd == -1) {
-        fprintf(stderr, "error: open: %s\n", strerror(errno));
-        XERBLA(fd);
-    }
-    this->drm_fd = fd;
 }
 
 void qmkl6_context::finalize_support(void)
 {
-    int ret;
-
-    ret = close(this->drm_fd);
-    if (ret) {
-        fprintf(stderr, "error: close: %s\n", strerror(errno));
-        XERBLA(ret);
-    }
-    this->drm_fd = -1;
 }
