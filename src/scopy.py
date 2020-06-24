@@ -10,7 +10,7 @@ def qpu_scopy(asm, *, num_qpus, unroll_shift, code_offset,
 
     g = globals()
     for i, v in enumerate(['length', 'src', 'src_inc', 'src_stride', 'dst',
-            'dst_inc', 'dst_stride', 'qpu_num']):
+                           'dst_inc', 'dst_stride', 'qpu_num']):
         g[f'reg_{v}'] = rf[i]
 
     nop(sig=ldunifrf(reg_length))
@@ -108,7 +108,7 @@ def main():
     num_qpus, unroll_shift, code_offset = map(int, sys.argv[1:])
 
     for insn in assemble(qpu_scopy, num_qpus=num_qpus,
-            unroll_shift=unroll_shift, code_offset=code_offset):
+                         unroll_shift=unroll_shift, code_offset=code_offset):
         print(f'UINT64_C({insn:#018x}),')
 
 
