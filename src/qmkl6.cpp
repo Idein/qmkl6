@@ -30,6 +30,7 @@ qmkl6_context::qmkl6_context(void)
     unif = (uint32_t*) alloc_memory(unif_size, unif_handle, unif_bus);
 
     init_support();
+    init_blas1();
 }
 
 qmkl6_context::~qmkl6_context(void)
@@ -38,6 +39,7 @@ qmkl6_context::~qmkl6_context(void)
 
     mkl_set_exit_handler(exit);
 
+    finalize_blas1();
     finalize_support();
 
     free_memory(unif_size, unif_handle, unif);

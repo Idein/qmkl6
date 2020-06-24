@@ -28,10 +28,14 @@ void* mkl_calloc(size_t num, size_t size, int alignment);
 void mkl_free(void *a_ptr);
 uint64_t mkl_mem_stat(unsigned *AllocatedBuffers);
 
+/* blas1.cpp */
+
+void cblas_scopy(int n, const float *x, int incx, float *y, int incy);
 
 
 #if defined(__cplusplus)
 }
 #endif
+
 
 #endif /* _QMKL6_H_ */

@@ -27,9 +27,12 @@ class qmkl6_context {
 
         std::unordered_map <const void*, struct memory_area> memory_map;
 
-        uint32_t unif_handle;
-        uint32_t unif_bus;
+        uint32_t unif_handle, qpu_scopy_handle;
+        uint32_t unif_bus, qpu_scopy_bus;
         uint32_t *unif;
+        uint64_t *qpu_scopy;
+
+        uint64_t timeout_ns = UINT64_C(10'000'000'000);
 
         /* qmkl6.cpp */
 
@@ -54,6 +57,11 @@ class qmkl6_context {
 
         void init_support(void);
         void finalize_support(void);
+
+        /* blas1.cpp */
+
+        void init_blas1(void);
+        void finalize_blas1(void);
 };
 
 extern qmkl6_context qmkl6;
