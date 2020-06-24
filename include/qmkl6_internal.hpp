@@ -36,6 +36,9 @@ class qmkl6_context {
         qmkl6_context(void);
         ~qmkl6_context(void);
 
+        void execute_qpu_code(uint32_t qpu_code_bus, uint32_t unif_bus,
+                unsigned num_qpus, unsigned num_handles, ...);
+        void wait_for_handles(uint64_t timeout_ns, unsigned num_handles, ...);
         void* alloc_memory(size_t size, uint32_t &handle, uint32_t &bus_addr);
         void free_memory(size_t size, uint32_t handle, void *map);
         void locate_virt(const void *virt_addr, uint32_t &handle,
