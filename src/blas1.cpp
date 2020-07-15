@@ -48,7 +48,7 @@ float cblas_sdot(const int n, const float *x, const int incx, const float *y,
 
     if (n <= 0 || n % (16 * 4 * unroll * num_qpus) != 0) {
         fprintf(stderr, "error: n (%d) must be a multiple of %d for now\n",
-                n, 16 * 4 * 8);
+                n, 16 * 4 * unroll * num_qpus);
         XERBLA(1);
     }
     if (incx <= 0 || incy <= 0) {

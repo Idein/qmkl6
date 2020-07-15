@@ -10,4 +10,7 @@ if (BUILD_TESTING)
     add_executable(scopy scopy.cpp)
     add_test(Scopy scopy)
 
+    add_executable(sdot sdot.cpp)
+    add_test(Sdot sdot)
+
 endif ()
