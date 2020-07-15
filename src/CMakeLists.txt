@@ -16,9 +16,11 @@ function (add_qhex6_from_py name)
 endfunction ()
 
 add_qhex6_from_py(scopy 8 0 0)
+add_qhex6_from_py(sdot 8 4 0)
 
 set_property(SOURCE blas1.cpp APPEND PROPERTY
-        OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/scopy.qhex6)
+        OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/scopy.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/sdot.qhex6)
 
 add_library(qmkl6 SHARED qmkl6.cpp support.cpp blas1.cpp)
 
