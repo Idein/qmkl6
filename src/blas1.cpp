@@ -1,3 +1,4 @@
+#include <cmath>
 #include <cstdio>
 
 #include "qmkl6.h"
@@ -14,6 +15,10 @@ static const uint64_t qpu_scopy_orig[] = {
 
 static const uint64_t qpu_sdot_orig[] = {
 #include "sdot.qhex6"
+};
+
+static const uint64_t qpu_snrm2_orig[] = {
+#include "snrm2.qhex6"
 };
 
 
@@ -116,6 +121,42 @@ float cblas_sdot(const int n, const float *x, const int incx, const float *y,
     return result;
 }
 
+float cblas_snrm2(const int n, const float *x, const int incx)
+{
+    const unsigned unroll = 1 << 5;
+    const unsigned num_qpus = 8;
+
+    if (n <= 0 || n % (16 * 8 * unroll * num_qpus) != 0) {
+        fprintf(stderr, "error: n (%d) must be a multiple of %d for now\n",
+                n, 16 * 8 * unroll * num_qpus);
+        XERBLA(1);
+    }
+    if (incx <= 0) {
+        fprintf(stderr, "error: inc must be greater than zero for now\n");
+        XERBLA(1);
+    }
+
+    uint32_t x_handle, x_bus;
+    qmkl6.locate_virt((void*) x, x_handle, x_bus);
+
+    qmkl6.unif[0] = n;
+    qmkl6.unif[1] = x_bus;
+    qmkl6.unif[2] = incx;
+    qmkl6.unif[3] = qmkl6.unif_bus;
+
+    qmkl6.execute_qpu_code(qmkl6.qpu_snrm2_bus, qmkl6.unif_bus, num_qpus, 1,
+            qmkl6.unif_handle);
+    qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, qmkl6.unif_handle);
+
+    const float * const results = (float*) qmkl6.unif;
+    float result = 0.f;
+
+    for (unsigned i = 0; i < 16 * num_qpus; ++i)
+        result += results[i];
+
+    return std::sqrt(result);
+}
+
 void qmkl6_context::init_blas1(void)
 {
     qpu_saxpy = (uint64_t*) alloc_memory(sizeof(qpu_saxpy_orig),
@@ -129,10 +170,15 @@ void qmkl6_context::init_blas1(void)
     qpu_sdot = (uint64_t*) alloc_memory(sizeof(qpu_sdot_orig), qpu_sdot_handle,
             qpu_sdot_bus);
     memcpy(qpu_sdot, qpu_sdot_orig, sizeof(qpu_sdot_orig));
+
+    qpu_snrm2 = (uint64_t*) alloc_memory(sizeof(qpu_snrm2_orig),
+            qpu_snrm2_handle, qpu_snrm2_bus);
+    memcpy(qpu_snrm2, qpu_snrm2_orig, sizeof(qpu_snrm2_orig));
 }
 
 void qmkl6_context::finalize_blas1(void)
 {
+    free_memory(sizeof(qpu_snrm2_orig), qpu_snrm2_handle, qpu_snrm2);
     free_memory(sizeof(qpu_sdot_orig), qpu_sdot_handle, qpu_sdot);
     free_memory(sizeof(qpu_scopy_orig), qpu_scopy_handle, qpu_scopy);
     free_memory(sizeof(qpu_saxpy_orig), qpu_saxpy_handle, qpu_saxpy);
