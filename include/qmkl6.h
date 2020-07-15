@@ -30,6 +30,7 @@ uint64_t mkl_mem_stat(unsigned *AllocatedBuffers);
 
 /* blas1.cpp */
 
+void cblas_saxpy(int n, float a, const float *x, int incx, float *y, int incy);
 void cblas_scopy(int n, const float *x, int incx, float *y, int incy);
 float cblas_sdot(int n, const float *x, int incx, const float *y, int incy);
 

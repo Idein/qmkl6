@@ -4,6 +4,10 @@
 #include "qmkl6_internal.hpp"
 
 
+static const uint64_t qpu_saxpy_orig[] = {
+#include "saxpy.qhex6"
+};
+
 static const uint64_t qpu_scopy_orig[] = {
 #include "scopy.qhex6"
 };
@@ -12,6 +16,38 @@ static const uint64_t qpu_sdot_orig[] = {
 #include "sdot.qhex6"
 };
 
+
+void cblas_saxpy(const int n, const float a, const float *x, const int incx,
+        float *y, const int incy)
+{
+    const unsigned unroll = 1 << 1;
+    const unsigned num_qpus = 8;
+
+    if (n <= 0 || n % (16 * 4 * unroll * num_qpus) != 0) {
+        fprintf(stderr, "error: n (%d) must be a multiple of %d for now\n",
+                n, 16 * 4 * unroll * num_qpus);
+        XERBLA(1);
+    }
+    if (incx <= 0 || incy <= 0) {
+        fprintf(stderr, "error: inc must be greater than zero for now\n");
+        XERBLA(1);
+    }
+
+    uint32_t x_handle, y_handle, x_bus, y_bus;
+    qmkl6.locate_virt((void*) x, x_handle, x_bus);
+    qmkl6.locate_virt((void*) y, y_handle, y_bus);
+
+    qmkl6.unif[0] = n;
+    qmkl6.unif[1] = *reinterpret_cast <const uint32_t*> (&a);
+    qmkl6.unif[2] = x_bus;
+    qmkl6.unif[3] = incx;
+    qmkl6.unif[4] = y_bus;
+    qmkl6.unif[5] = incy;
+
+    qmkl6.execute_qpu_code(qmkl6.qpu_saxpy_bus, qmkl6.unif_bus, num_qpus, 1,
+            y_handle);
+    qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, y_handle);
+}
 
 void cblas_scopy(const int n, const float * const x, const int incx,
         float * const y, const int incy)
@@ -82,6 +118,10 @@ float cblas_sdot(const int n, const float *x, const int incx, const float *y,
 
 void qmkl6_context::init_blas1(void)
 {
+    qpu_saxpy = (uint64_t*) alloc_memory(sizeof(qpu_saxpy_orig),
+            qpu_saxpy_handle, qpu_saxpy_bus);
+    memcpy(qpu_saxpy, qpu_saxpy_orig, sizeof(qpu_saxpy_orig));
+
     qpu_scopy = (uint64_t*) alloc_memory(sizeof(qpu_scopy_orig),
             qpu_scopy_handle, qpu_scopy_bus);
     memcpy(qpu_scopy, qpu_scopy_orig, sizeof(qpu_scopy_orig));
@@ -95,4 +135,5 @@ void qmkl6_context::finalize_blas1(void)
 {
     free_memory(sizeof(qpu_sdot_orig), qpu_sdot_handle, qpu_sdot);
     free_memory(sizeof(qpu_scopy_orig), qpu_scopy_handle, qpu_scopy);
+    free_memory(sizeof(qpu_saxpy_orig), qpu_saxpy_handle, qpu_saxpy);
 }
