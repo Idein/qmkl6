@@ -38,7 +38,7 @@ void cblas_saxpy(const int n, const float a, const float *x, const int incx,
     qmkl6.locate_virt((void*) y, y_handle, y_bus);
 
     qmkl6.unif[0] = n;
-    qmkl6.unif[1] = *reinterpret_cast <const uint32_t*> (&a);
+    *reinterpret_cast <float*> (&qmkl6.unif[1]) = a;
     qmkl6.unif[2] = x_bus;
     qmkl6.unif[3] = incx;
     qmkl6.unif[4] = y_bus;

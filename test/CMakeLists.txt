@@ -7,6 +7,9 @@ if (BUILD_TESTING)
     add_executable(mem mem.cpp)
     add_test(Mem mem)
 
+    add_executable(saxpy saxpy.cpp)
+    add_test(Saxpy saxpy)
+
     add_executable(scopy scopy.cpp)
     add_test(Scopy scopy)
 
