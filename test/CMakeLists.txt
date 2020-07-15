@@ -16,4 +16,7 @@ if (BUILD_TESTING)
     add_executable(sdot sdot.cpp)
     add_test(Sdot sdot)
 
+    add_executable(snrm2 snrm2.cpp)
+    add_test(Snrm2 snrm2)
+
 endif ()
