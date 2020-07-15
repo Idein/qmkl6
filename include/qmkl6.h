@@ -11,6 +11,18 @@ extern "C" {
 #endif
 
 
+typedef enum {
+    CblasRowMajor,
+    CblasColMajor,
+} CBLAS_LAYOUT;
+
+typedef enum {
+    CblasNoTrans,
+    CblasTrans,
+    CblasConjTrans,
+} CBLAS_TRANSPOSE;
+
+
 /* qmkl6.cpp */
 
 void qmkl6_init(void);
