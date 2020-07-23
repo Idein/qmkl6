@@ -64,12 +64,11 @@ void cblas_saxpy(int n, const float a, const float *x, const int incx, float *y,
         qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, y_handle);
 }
 
-void cblas_scopy(const int n, const float * const x, const int incx,
-        float * const y, const int incy)
+void cblas_scopy(int n, const float * const x, const int incx, float * const y,
+        const int incy)
 {
-    if (n <= 0 || n % (16 * 8 * 8) != 0) {
-        fprintf(stderr, "error: n (%d) must be a multiple of %d for now\n",
-                n, 16 * 8 * 8);
+    if (n <= 0) {
+        fprintf(stderr, "error: n (%d) must be greater than zero\n", n);
         XERBLA(1);
     }
     if (incx <= 0 || incy <= 0) {
@@ -77,18 +76,33 @@ void cblas_scopy(const int n, const float * const x, const int incx,
         XERBLA(1);
     }
 
+    const unsigned num_queues = 8, num_threads = 16, num_qpus = 8,
+          unroll = 1 << 0, align = num_queues * num_threads * num_qpus * unroll;
+    const int n_rem = n % align;
+    n -= n_rem;
+
     uint32_t x_handle, y_handle, x_bus, y_bus;
-    qmkl6.locate_virt((void*) x, x_handle, x_bus);
-    qmkl6.locate_virt((void*) y, y_handle, y_bus);
 
-    qmkl6.unif[0] = n;
-    qmkl6.unif[1] = x_bus;
-    qmkl6.unif[2] = incx;
-    qmkl6.unif[3] = y_bus;
-    qmkl6.unif[4] = incy;
+    if (n > 0) {
+        qmkl6.locate_virt((void*) x, x_handle, x_bus);
+        qmkl6.locate_virt((void*) y, y_handle, y_bus);
 
-    qmkl6.execute_qpu_code(qmkl6.qpu_scopy_bus, qmkl6.unif_bus, 8, 1, y_handle);
-    qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, y_handle);
+        qmkl6.unif[0] = n;
+        qmkl6.unif[1] = x_bus;
+        qmkl6.unif[2] = incx;
+        qmkl6.unif[3] = y_bus;
+        qmkl6.unif[4] = incy;
+
+        qmkl6.execute_qpu_code(qmkl6.qpu_scopy_bus, qmkl6.unif_bus, 8, 1,
+                y_handle);
+    }
+
+    for (int i = 0, j = incx * n, k = incy * n; i < n_rem;
+            ++i, j += incx, k += incy)
+        y[k] = x[j];
+
+    if (n > 0)
+        qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, y_handle);
 }
 
 float cblas_sdot(const int n, const float *x, const int incx, const float *y,

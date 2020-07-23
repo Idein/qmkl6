@@ -55,12 +55,12 @@ static
 int test_scopy_random(void)
 {
     std::default_random_engine gen;
-    std::uniform_int_distribution <size_t> dist_n(1, 1 << 8);
+    std::uniform_int_distribution <size_t> dist_n(1, 1 << 18);
     std::uniform_int_distribution <unsigned> dist_inc(1, 64);
     std::uniform_int_distribution <uint32_t> dist_value;
 
     for (unsigned i = 0; i < 20; ++i) {
-        const unsigned n = dist_n(gen) << 10;
+        const unsigned n = dist_n(gen);
         const unsigned incx = dist_inc(gen), incy = dist_inc(gen);
         printf("Testing n = %u, incx = %u, incy = %u\n", n, incx, incy);
 
