@@ -22,15 +22,11 @@ static const uint64_t qpu_snrm2_orig[] = {
 };
 
 
-void cblas_saxpy(const int n, const float a, const float *x, const int incx,
-        float *y, const int incy)
+void cblas_saxpy(int n, const float a, const float *x, const int incx, float *y,
+        const int incy)
 {
-    const unsigned unroll = 1 << 1;
-    const unsigned num_qpus = 8;
-
-    if (n <= 0 || n % (16 * 4 * unroll * num_qpus) != 0) {
-        fprintf(stderr, "error: n (%d) must be a multiple of %d for now\n",
-                n, 16 * 4 * unroll * num_qpus);
+    if (n <= 0) {
+        fprintf(stderr, "error: n (%d) must be greater than zero\n", n);
         XERBLA(1);
     }
     if (incx <= 0 || incy <= 0) {
@@ -38,20 +34,34 @@ void cblas_saxpy(const int n, const float a, const float *x, const int incx,
         XERBLA(1);
     }
 
+    const unsigned num_queues = 4, num_threads = 16, num_qpus = 8,
+          unroll = 1 << 1, align = num_queues * num_threads * num_qpus * unroll;
+    const int n_rem = n % align;
+    n -= n_rem;
+
     uint32_t x_handle, y_handle, x_bus, y_bus;
-    qmkl6.locate_virt((void*) x, x_handle, x_bus);
-    qmkl6.locate_virt((void*) y, y_handle, y_bus);
 
-    qmkl6.unif[0] = n;
-    *reinterpret_cast <float*> (&qmkl6.unif[1]) = a;
-    qmkl6.unif[2] = x_bus;
-    qmkl6.unif[3] = incx;
-    qmkl6.unif[4] = y_bus;
-    qmkl6.unif[5] = incy;
+    if (n > 0) {
+        qmkl6.locate_virt((void*) x, x_handle, x_bus);
+        qmkl6.locate_virt((void*) y, y_handle, y_bus);
 
-    qmkl6.execute_qpu_code(qmkl6.qpu_saxpy_bus, qmkl6.unif_bus, num_qpus, 1,
-            y_handle);
-    qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, y_handle);
+        qmkl6.unif[0] = n;
+        *reinterpret_cast <float*> (&qmkl6.unif[1]) = a;
+        qmkl6.unif[2] = x_bus;
+        qmkl6.unif[3] = incx;
+        qmkl6.unif[4] = y_bus;
+        qmkl6.unif[5] = incy;
+
+        qmkl6.execute_qpu_code(qmkl6.qpu_saxpy_bus, qmkl6.unif_bus, num_qpus, 1,
+                y_handle);
+    }
+
+    for (int i = 0, j = incx * n, k = incy * n; i < n_rem;
+            ++i, j += incx, k += incy)
+        y[k] += a * x[j];
+
+    if (n > 0)
+        qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, y_handle);
 }
 
 void cblas_scopy(const int n, const float * const x, const int incx,
