@@ -29,6 +29,6 @@ add_subdirectory(include)
 add_subdirectory(src)
 add_subdirectory(test)
 
-configure_file(qmkl6.pc.in qmkl6.pc @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/qmkl6.pc
+configure_file(blas-qmkl6.pc.in blas-qmkl6.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/blas-qmkl6.pc
         DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)

@@ -1,8 +1,8 @@
 #include <cmath>
 #include <cstdio>
 
-#include "qmkl6.h"
-#include "qmkl6_internal.hpp"
+#include "cblas-qmkl6.h"
+#include "qmkl6-internal.hpp"
 
 
 static const uint64_t qpu_saxpy_orig[] = {

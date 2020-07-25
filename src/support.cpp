@@ -6,8 +6,8 @@
 #include <ctime>
 #include <unordered_map>
 
-#include "qmkl6.h"
-#include "qmkl6_internal.hpp"
+#include "cblas-qmkl6.h"
+#include "qmkl6-internal.hpp"
 
 
 int mkl_set_exit_handler(const MKLExitHandler myexit)

@@ -12,8 +12,8 @@
 
 #include <drm_v3d.h>
 
-#include "qmkl6.h"
-#include "qmkl6_internal.hpp"
+#include "cblas-qmkl6.h"
+#include "qmkl6-internal.hpp"
 
 
 qmkl6_context qmkl6;

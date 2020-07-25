@@ -5,7 +5,7 @@
 #include <iostream>
 #include <random>
 
-#include <qmkl6.h>
+#include "cblasdefs.h"
 
 
 static

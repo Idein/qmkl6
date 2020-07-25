@@ -1,22 +1,37 @@
-include_directories(${CMAKE_SOURCE_DIR}/include)
+# libatlas-base-dev, libblas-dev, libopenblas-dev
+set(blas_list qmkl6 atlas netlib openblas)
+set(test_list mem saxpy scopy sdot snrm2)
+
+include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 add_compile_options(-pipe -W -Wall -Wextra -O2 -g -std=c++17)
-link_libraries(${DRM_V3D_LINK_LIBRARIES} qmkl6)
+
+set(qmkl6_LINK_LIBRARIES ${DRM_V3D_LINK_LIBRARIES} qmkl6)
 
 if (BUILD_TESTING)
 
-    add_executable(mem mem.cpp)
-    add_test(Mem mem)
+    foreach (blas IN LISTS blas_list)
 
-    add_executable(saxpy saxpy.cpp)
-    add_test(Saxpy saxpy)
+        if (NOT blas STREQUAL qmkl6)
+            pkg_check_modules(${blas} blas-${blas})
 
-    add_executable(scopy scopy.cpp)
-    add_test(Scopy scopy)
+            if (NOT ${blas}_FOUND)
+                continue()
+            endif ()
+        endif ()
 
-    add_executable(sdot sdot.cpp)
-    add_test(Sdot sdot)
+        foreach (test IN LISTS test_list)
 
-    add_executable(snrm2 snrm2.cpp)
-    add_test(Snrm2 snrm2)
+            if (NOT blas STREQUAL qmkl6 AND test STREQUAL mem)
+                continue()
+            endif ()
+
+            add_executable(${test}-${blas} ${test}.cpp)
+            target_compile_definitions(${test}-${blas} PUBLIC CBLAS_${blas})
+            target_link_libraries(${test}-${blas} ${${blas}_LINK_LIBRARIES})
+            add_test(${test}-${blas} ${test}-${blas})
+
+        endforeach()
+
+    endforeach ()
 
 endif ()
