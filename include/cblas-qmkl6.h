@@ -12,14 +12,14 @@ extern "C" {
 
 
 typedef enum {
-    CblasRowMajor,
-    CblasColMajor,
+    CblasRowMajor = 101,
+    CblasColMajor = 102,
 } CBLAS_LAYOUT;
 
 typedef enum {
-    CblasNoTrans,
-    CblasTrans,
-    CblasConjTrans,
+    CblasNoTrans   = 111,
+    CblasTrans     = 112,
+    CblasConjTrans = 113,
 } CBLAS_TRANSPOSE;
 
 
