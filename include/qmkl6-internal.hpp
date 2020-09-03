@@ -49,6 +49,21 @@ class qmkl6_context {
         void locate_virt(const void *virt_addr, uint32_t &handle,
                 uint32_t &bus_addr);
 
+        template <typename T, typename U>
+        T bit_cast(const U u)
+        {
+            static_assert(sizeof(T) == sizeof(U), "Size of T and U must match");
+
+            union {
+                T t;
+                U u;
+            } s = {
+                .u = u,
+            };
+
+            return s.t;
+        }
+
     private:
 
         int drm_fd;
