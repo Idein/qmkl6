@@ -55,6 +55,14 @@ qmkl6_context::~qmkl6_context(void)
 void* qmkl6_context::alloc_memory(const size_t size, uint32_t &handle,
         uint32_t &bus_addr)
 {
+    uint64_t mmap_offset;
+
+    return alloc_memory(size, handle, bus_addr, mmap_offset);
+}
+
+void* qmkl6_context::alloc_memory(const size_t size, uint32_t &handle,
+        uint32_t &bus_addr, uint64_t &mmap_offset)
+{
     int ret;
 
     ret = drm_v3d_create_bo(drm_fd, size, 0, &handle, &bus_addr);
@@ -63,7 +71,6 @@ void* qmkl6_context::alloc_memory(const size_t size, uint32_t &handle,
         XERBLA(ret);
     }
 
-    uint64_t mmap_offset;
     ret = drm_v3d_mmap_bo(drm_fd, handle, 0, &mmap_offset);
     if (ret) {
         fprintf(stderr, "error: drm_v3d_mmap_bo: %s\n", strerror(errno));
