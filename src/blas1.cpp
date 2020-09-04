@@ -76,7 +76,7 @@ void cblas_scopy(int n, const float * const x, const int incx, float * const y,
         XERBLA(1);
     }
 
-    const unsigned num_queues = 8, num_threads = 16, num_qpus = 8,
+    const unsigned num_queues = 64, num_threads = 16, num_qpus = 8,
           unroll = 1 << 0, align = num_queues * num_threads * num_qpus * unroll;
     const int n_rem = n % align;
     n -= n_rem;
@@ -87,11 +87,19 @@ void cblas_scopy(int n, const float * const x, const int incx, float * const y,
         qmkl6.locate_virt((void*) x, x_handle, x_bus);
         qmkl6.locate_virt((void*) y, y_handle, y_bus);
 
+#if 0
         qmkl6.unif[0] = n;
         qmkl6.unif[1] = x_bus;
         qmkl6.unif[2] = incx;
         qmkl6.unif[3] = y_bus;
         qmkl6.unif[4] = incy;
+#else
+        qmkl6.unif[0] = incx;
+        qmkl6.unif[1] = x_bus;
+        qmkl6.unif[2] = incy;
+        qmkl6.unif[3] = y_bus;
+        qmkl6.unif[4] = n;
+#endif
 
         qmkl6.execute_qpu_code(qmkl6.qpu_scopy_bus, qmkl6.unif_bus, 8, 1,
                 y_handle);
