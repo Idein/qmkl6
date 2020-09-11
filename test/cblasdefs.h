@@ -7,6 +7,7 @@ extern "C" {
 
 #if defined(CBLAS_atlas)
 #include <cblas-atlas.h>
+typedef CBLAS_ORDER CBLAS_LAYOUT;
 #elif defined(CBLAS_netlib)
 #include <cblas-netlib.h>
 #elif defined(CBLAS_openblas)
