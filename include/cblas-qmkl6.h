@@ -47,6 +47,12 @@ void cblas_scopy(int n, const float *x, int incx, float *y, int incy);
 float cblas_sdot(int n, const float *x, int incx, const float *y, int incy);
 float cblas_snrm2(int n, const float *x, int incx);
 
+/* blas2.cpp */
+
+void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, int m, int n,
+        float alpha, const float *a, int lda, const float *x, int incx,
+        float beta, float *y, int incy);
+
 
 #if defined(__cplusplus)
 }

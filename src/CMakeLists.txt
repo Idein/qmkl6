@@ -26,6 +26,13 @@ set_property(SOURCE blas1.cpp APPEND PROPERTY
                        ${CMAKE_CURRENT_BINARY_DIR}/saxpy.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/snrm2.qhex6)
 
-add_library(qmkl6 SHARED qmkl6.cpp support.cpp blas1.cpp)
+add_qhex6_from_py(sgemv_n 8 0)
+add_qhex6_from_py(sgemv_t 8 0)
+
+set_property(SOURCE blas2.cpp APPEND PROPERTY
+        OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sgemv_n.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/sgemv_t.qhex6)
+
+add_library(qmkl6 SHARED qmkl6.cpp support.cpp blas1.cpp blas2.cpp)
 
 install(TARGETS qmkl6 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})

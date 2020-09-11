@@ -28,11 +28,13 @@ class qmkl6_context {
         std::unordered_map <const void*, struct memory_area> memory_map;
 
         uint32_t unif_handle, qpu_saxpy_handle, qpu_scopy_handle,
-                qpu_sdot_handle, qpu_snrm2_handle;
+                qpu_sdot_handle, qpu_snrm2_handle, qpu_sgemv_n_handle,
+                qpu_sgemv_t_handle;
         uint32_t unif_bus, qpu_saxpy_bus, qpu_scopy_bus, qpu_sdot_bus,
-                qpu_snrm2_bus;
+                qpu_snrm2_bus, qpu_sgemv_n_bus, qpu_sgemv_t_bus;
         uint32_t *unif;
-        uint64_t *qpu_saxpy, *qpu_scopy, *qpu_sdot, *qpu_snrm2;
+        uint64_t *qpu_saxpy, *qpu_scopy, *qpu_sdot, *qpu_snrm2, *qpu_sgemv_n,
+                *qpu_sgemv_t;
 
         uint64_t timeout_ns = UINT64_C(10'000'000'000);
 
@@ -81,6 +83,11 @@ class qmkl6_context {
 
         void init_blas1(void);
         void finalize_blas1(void);
+
+        /* blas2.cpp */
+
+        void init_blas2(void);
+        void finalize_blas2(void);
 };
 
 extern qmkl6_context qmkl6;
