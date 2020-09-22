@@ -29,12 +29,16 @@ class qmkl6_context {
 
         uint32_t unif_handle, qpu_saxpy_handle, qpu_scopy_handle,
                 qpu_sdot_handle, qpu_snrm2_handle, qpu_sgemv_n_handle,
-                qpu_sgemv_t_handle;
+                qpu_sgemv_t_handle, qpu_sgemm_rnn_handle, qpu_sgemm_rnt_handle,
+                qpu_sgemm_rtn_handle, qpu_sgemm_rtt_handle;
         uint32_t unif_bus, qpu_saxpy_bus, qpu_scopy_bus, qpu_sdot_bus,
-                qpu_snrm2_bus, qpu_sgemv_n_bus, qpu_sgemv_t_bus;
+                qpu_snrm2_bus, qpu_sgemv_n_bus, qpu_sgemv_t_bus,
+                qpu_sgemm_rnn_bus, qpu_sgemm_rnt_bus, qpu_sgemm_rtn_bus,
+                qpu_sgemm_rtt_bus;
         uint32_t *unif;
         uint64_t *qpu_saxpy, *qpu_scopy, *qpu_sdot, *qpu_snrm2, *qpu_sgemv_n,
-                *qpu_sgemv_t;
+                *qpu_sgemv_t, *qpu_sgemm_rnn, *qpu_sgemm_rnt, *qpu_sgemm_rtn,
+                *qpu_sgemm_rtt;
 
         uint64_t timeout_ns = UINT64_C(10'000'000'000);
 
@@ -88,6 +92,11 @@ class qmkl6_context {
 
         void init_blas2(void);
         void finalize_blas2(void);
+
+        /* blas3.cpp */
+
+        void init_blas3(void);
+        void finalize_blas3(void);
 };
 
 extern qmkl6_context qmkl6;

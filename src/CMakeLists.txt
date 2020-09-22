@@ -33,6 +33,17 @@ set_property(SOURCE blas2.cpp APPEND PROPERTY
         OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sgemv_n.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/sgemv_t.qhex6)
 
-add_library(qmkl6 SHARED qmkl6.cpp support.cpp blas1.cpp blas2.cpp)
+add_qhex6_from_py(sgemm_rnn 8 0)
+add_qhex6_from_py(sgemm_rnt 8 0)
+add_qhex6_from_py(sgemm_rtn 8 0)
+add_qhex6_from_py(sgemm_rtt 8 0)
+
+set_property(SOURCE blas3.cpp APPEND PROPERTY
+        OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sgemm_rnn.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/sgemm_rnt.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/sgemm_rtn.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/sgemm_rtt.qhex6)
+
+add_library(qmkl6 SHARED qmkl6.cpp support.cpp blas1.cpp blas2.cpp blas3.cpp)
 
 install(TARGETS qmkl6 LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})

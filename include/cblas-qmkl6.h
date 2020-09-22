@@ -53,6 +53,13 @@ void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, int m, int n,
         float alpha, const float *a, int lda, const float *x, int incx,
         float beta, float *y, int incy);
 
+/* blas3.cpp */
+
+void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa,
+        CBLAS_TRANSPOSE transb, int m, int n, int k, float alpha,
+        const float *a, int lda, const float *b, int ldb, float beta, float *c,
+        int ldc);
+
 
 #if defined(__cplusplus)
 }
