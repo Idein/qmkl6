@@ -20,6 +20,7 @@ include(GNUInstallDirs)
 include(CPack)
 include(CTest)
 
+find_package(OpenMP)
 find_package(PkgConfig)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
