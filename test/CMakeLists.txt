@@ -1,6 +1,6 @@
 # libatlas-base-dev, libblas-dev, libopenblas-dev
 set(blas_list qmkl6 atlas netlib openblas)
-set(test_list mem saxpy scopy sdot snrm2 sgemv)
+set(test_list mem saxpy scopy sdot snrm2 sgemv sgemm)
 
 include_directories(${CMAKE_SOURCE_DIR}/include ${CMAKE_CURRENT_SOURCE_DIR})
 add_compile_options(-pipe -W -Wall -Wextra -O2 -g -std=c++17)
