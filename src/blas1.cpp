@@ -5,18 +5,22 @@
 #include "qmkl6-internal.hpp"
 
 
+/* saxpy: y += a * x */
 static const uint64_t qpu_saxpy_orig[] = {
 #include "saxpy.qhex6"
 };
 
+/* scopy: y = x */
 static const uint64_t qpu_scopy_orig[] = {
 #include "scopy.qhex6"
 };
 
+/* sdot: x.dot(y) */
 static const uint64_t qpu_sdot_orig[] = {
 #include "sdot.qhex6"
 };
 
+/* snrm2: sqrt(x.dot(x)) */
 static const uint64_t qpu_snrm2_orig[] = {
 #include "snrm2.qhex6"
 };
