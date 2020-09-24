@@ -1,0 +1,11 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+
+Name: @CPACK_PACKAGE_NAME@
+Description: @CPACK_PACKAGE_DESCRIPTION_SUMMARY@
+Version: @CPACK_PACKAGE_VERSION@
+
+Cflags: -I${includedir}
+Libs: -L${libdir} -lqmkl6
+Requires.private: libdrm_v3d

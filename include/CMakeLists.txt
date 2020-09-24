@@ -1,0 +1,1 @@
+install(FILES cblas-qmkl6.h DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
