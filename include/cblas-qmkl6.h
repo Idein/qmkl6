@@ -47,6 +47,7 @@ void cblas_saxpy(int n, float a, const float *x, int incx, float *y, int incy);
 void cblas_scopy(int n, const float *x, int incx, float *y, int incy);
 float cblas_sdot(int n, const float *x, int incx, const float *y, int incy);
 float cblas_snrm2(int n, const float *x, int incx);
+void cblas_sscal(int n, float a, float *x, int incx);
 
 /* blas2.cpp */
 

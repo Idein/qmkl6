@@ -29,6 +29,11 @@ static const uint64_t qpu_snrm2_orig[] = {
 #include "snrm2.qhex6"
 };
 
+/* sscal: x *= a */
+static const uint64_t qpu_sscal_orig[] = {
+#include "sscal.qhex6"
+};
+
 
 float cblas_sasum(int n, const float *x, const int incx)
 {
@@ -261,6 +266,43 @@ float cblas_snrm2(int n, const float *x, const int incx)
     return std::sqrt(result);
 }
 
+void cblas_sscal(int n, const float a, float *x, const int incx)
+{
+    if (n <= 0) {
+        fprintf(stderr, "error: n (%d) must be greater than zero\n", n);
+        XERBLA(1);
+    }
+    if (incx <= 0) {
+        fprintf(stderr, "error: incx must be greater than zero for now\n");
+        XERBLA(1);
+    }
+
+    const unsigned num_queues = 64, num_threads = 16, num_qpus = 8,
+          unroll = 1 << 0, align = num_queues * num_threads * num_qpus * unroll;
+    const int n_rem = n % align;
+    n -= n_rem;
+
+    uint32_t x_handle, x_bus;
+
+    if (n > 0) {
+        qmkl6.locate_virt((void*) x, x_handle, x_bus);
+
+        qmkl6.unif[0] = incx;
+        qmkl6.unif[1] = x_bus;
+        qmkl6.unif[2] = n;
+        qmkl6.unif[3] = qmkl6.bit_cast <uint32_t> (a);
+
+        qmkl6.execute_qpu_code(qmkl6.qpu_sscal_bus, qmkl6.unif_bus, num_qpus, 1,
+                x_handle);
+    }
+
+    for (int i = 0, j = incx * n; i < n_rem; ++i, j += incx)
+        x[j] *= a;
+
+    if (n > 0)
+        qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, x_handle);
+}
+
 void qmkl6_context::init_blas1(void)
 {
     qpu_sasum = (uint64_t*) alloc_memory(sizeof(qpu_sasum_orig),
@@ -282,10 +324,15 @@ void qmkl6_context::init_blas1(void)
     qpu_snrm2 = (uint64_t*) alloc_memory(sizeof(qpu_snrm2_orig),
             qpu_snrm2_handle, qpu_snrm2_bus);
     memcpy(qpu_snrm2, qpu_snrm2_orig, sizeof(qpu_snrm2_orig));
+
+    qpu_sscal = (uint64_t*) alloc_memory(sizeof(qpu_sscal_orig),
+            qpu_sscal_handle, qpu_sscal_bus);
+    memcpy(qpu_sscal, qpu_sscal_orig, sizeof(qpu_sscal_orig));
 }
 
 void qmkl6_context::finalize_blas1(void)
 {
+    free_memory(sizeof(qpu_sscal_orig), qpu_sscal_handle, qpu_sscal);
     free_memory(sizeof(qpu_snrm2_orig), qpu_snrm2_handle, qpu_snrm2);
     free_memory(sizeof(qpu_sdot_orig), qpu_sdot_handle, qpu_sdot);
     free_memory(sizeof(qpu_scopy_orig), qpu_scopy_handle, qpu_scopy);
