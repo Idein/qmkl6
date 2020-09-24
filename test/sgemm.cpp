@@ -31,25 +31,34 @@ void naive_sgemm_rnn(const int M, const int N, const int K, const float alpha,
 
 #else
 
-    constexpr int split_m = 16, split_n = 16, split_k = 32;
-
-#pragma omp parallel for collapse(1) schedule(guided) default(none) \
-        firstprivate(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, split_m, split_n, split_k)
-    for (int m = 0; m < M; m += split_m) {
-        const int bound_mm = std::min(M - m, split_m);
-        for (int n = 0; n < N; n += split_n) {
-            const int bound_nn = std::min(N - n, split_n);
-            for (int mm = 0; mm < bound_mm; ++mm)
-                for (int nn = 0; nn < bound_nn; ++nn)
-                    C[ldc * m + n + ldc * mm + nn] *= beta;
-            for (int k = 0; k < K; k += split_k) {
-                const int bound_kk = std::min(K - k, split_k);
-                for (int mm = 0; mm < bound_mm; ++mm) {
-                    for (int nn = 0; nn < bound_nn; ++nn) {
-                        float s = 0.f;
+#pragma omp parallel default(none) \
+        firstprivate(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc)
+    {
+        constexpr int split_m = 32, split_n = 32, split_k = 32;
+        float aa[split_m][split_k], bb[split_n][split_k];
+#pragma omp for collapse(2) schedule(guided)
+        for (int m = 0; m < M; m += split_m) {
+            for (int n = 0; n < N; n += split_n) {
+                const int bound_mm = (M - m < split_m) ? M - m : split_m;
+                const int bound_nn = (N - n < split_n) ? N - n : split_n;
+                for (int mm = 0; mm < bound_mm; ++mm)
+                    for (int nn = 0; nn < bound_nn; ++nn)
+                        C[ldc * m + n + ldc * mm + nn] *= beta;
+                for (int k = 0; k < K; k += split_k) {
+                    const int bound_kk = (K - k < split_k) ? K - k : split_k;
+                    for (int mm = 0; mm < bound_mm; ++mm)
                         for (int kk = 0; kk < bound_kk; ++kk)
-                            s += A[lda * m + k + lda * mm + kk] * B[ldb * k + n + ldb * kk + nn];
-                        C[ldc * m + n + ldc * mm + nn] += alpha * s;
+                            aa[mm][kk] = A[lda * m + k + lda * mm + kk];
+                    for (int kk = 0; kk < bound_kk; ++kk)
+                        for (int nn = 0; nn < bound_nn; ++nn)
+                            bb[nn][kk] = B[ldb * k + n + ldb * kk + nn];
+                    for (int mm = 0; mm < bound_mm; ++mm) {
+                        for (int nn = 0; nn < bound_nn; ++nn) {
+                            float s = 0.f;
+                            for (int kk = 0; kk < bound_kk; ++kk)
+                                s += aa[mm][kk] * bb[nn][kk];
+                            C[ldc * m + n + ldc * mm + nn] += alpha * s;
+                        }
                     }
                 }
             }
@@ -82,25 +91,34 @@ void naive_sgemm_rnt(const int M, const int N, const int K, const float alpha,
 
 #else
 
-    constexpr int split_m = 16, split_n = 16, split_k = 64;
-
-#pragma omp parallel for collapse(1) schedule(guided) default(none) \
-        firstprivate(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, split_m, split_n, split_k)
-    for (int m = 0; m < M; m += split_m) {
-        const int bound_mm = std::min(M - m, split_m);
-        for (int n = 0; n < N; n += split_n) {
-            const int bound_nn = std::min(N - n, split_n);
-            for (int mm = 0; mm < bound_mm; ++mm)
-                for (int nn = 0; nn < bound_nn; ++nn)
-                    C[ldc * m + n + ldc * mm + nn] *= beta;
-            for (int k = 0; k < K; k += split_k) {
-                const int bound_kk = std::min(K - k, split_k);
-                for (int mm = 0; mm < bound_mm; ++mm) {
-                    for (int nn = 0; nn < bound_nn; ++nn) {
-                        float s = 0.f;
+#pragma omp parallel default(none) \
+        firstprivate(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc)
+    {
+        constexpr int split_m = 16, split_n = 16, split_k = 64;
+        float aa[split_m][split_k], bb[split_n][split_k];
+#pragma omp for collapse(2) schedule(guided)
+        for (int m = 0; m < M; m += split_m) {
+            for (int n = 0; n < N; n += split_n) {
+                const int bound_mm = (M - m < split_m) ? M - m : split_m;
+                const int bound_nn = (N - n < split_n) ? N - n : split_n;
+                for (int mm = 0; mm < bound_mm; ++mm)
+                    for (int nn = 0; nn < bound_nn; ++nn)
+                        C[ldc * m + n + ldc * mm + nn] *= beta;
+                for (int k = 0; k < K; k += split_k) {
+                    const int bound_kk = (K - k < split_k) ? K - k : split_k;
+                    for (int mm = 0; mm < bound_mm; ++mm)
                         for (int kk = 0; kk < bound_kk; ++kk)
-                            s += A[lda * m + k + lda * mm + kk] * B[ldb * n + k + ldb * nn + kk];
-                        C[ldc * m + n + ldc * mm + nn] += alpha * s;
+                            aa[mm][kk] = A[lda * m + k + lda * mm + kk];
+                    for (int nn = 0; nn < bound_nn; ++nn)
+                        for (int kk = 0; kk < bound_kk; ++kk)
+                            bb[nn][kk] = B[ldb * n + k + ldb * nn + kk];
+                    for (int mm = 0; mm < bound_mm; ++mm) {
+                        for (int nn = 0; nn < bound_nn; ++nn) {
+                            float s = 0.f;
+                            for (int kk = 0; kk < bound_kk; ++kk)
+                                s += aa[mm][kk] * bb[nn][kk];
+                            C[ldc * m + n + ldc * mm + nn] += alpha * s;
+                        }
                     }
                 }
             }
@@ -133,25 +151,34 @@ void naive_sgemm_rtn(const int M, const int N, const int K, const float alpha,
 
 #else
 
-    constexpr int split_m = 32, split_n = 32, split_k = 16;
-
-#pragma omp parallel for collapse(1) schedule(guided) default(none) \
-        firstprivate(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, split_m, split_n, split_k)
-    for (int m = 0; m < M; m += split_m) {
-        const int bound_mm = std::min(M - m, split_m);
-        for (int n = 0; n < N; n += split_n) {
-            const int bound_nn = std::min(N - n, split_n);
-            for (int mm = 0; mm < bound_mm; ++mm)
-                for (int nn = 0; nn < bound_nn; ++nn)
-                    C[ldc * m + n + ldc * mm + nn] *= beta;
-            for (int k = 0; k < K; k += split_k) {
-                const int bound_kk = std::min(K - k, split_k);
-                for (int mm = 0; mm < bound_mm; ++mm) {
-                    for (int nn = 0; nn < bound_nn; ++nn) {
-                        float s = 0.f;
-                        for (int kk = 0; kk < bound_kk; ++kk)
-                            s += A[lda * k + m + lda * kk + mm] * B[ldb * k + n + ldb * kk + nn];
-                        C[ldc * m + n + ldc * mm + nn] += alpha * s;
+#pragma omp parallel default(none) \
+        firstprivate(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc)
+    {
+        constexpr int split_m = 32, split_n = 32, split_k = 32;
+        float aa[split_m][split_k], bb[split_n][split_k];
+#pragma omp for collapse(2) schedule(guided)
+        for (int m = 0; m < M; m += split_m) {
+            for (int n = 0; n < N; n += split_n) {
+                const int bound_mm = (M - m < split_m) ? M - m : split_m;
+                const int bound_nn = (N - n < split_n) ? N - n : split_n;
+                for (int mm = 0; mm < bound_mm; ++mm)
+                    for (int nn = 0; nn < bound_nn; ++nn)
+                        C[ldc * m + n + ldc * mm + nn] *= beta;
+                for (int k = 0; k < K; k += split_k) {
+                    const int bound_kk = (K - k < split_k) ? K - k : split_k;
+                    for (int kk = 0; kk < bound_kk; ++kk)
+                        for (int mm = 0; mm < bound_mm; ++mm)
+                            aa[mm][kk] = A[lda * k + m + lda * kk + mm];
+                    for (int kk = 0; kk < bound_kk; ++kk)
+                        for (int nn = 0; nn < bound_nn; ++nn)
+                            bb[nn][kk] = B[ldb * k + n + ldb * kk + nn];
+                    for (int mm = 0; mm < bound_mm; ++mm) {
+                        for (int nn = 0; nn < bound_nn; ++nn) {
+                            float s = 0.f;
+                            for (int kk = 0; kk < bound_kk; ++kk)
+                                s += aa[mm][kk] * bb[nn][kk];
+                            C[ldc * m + n + ldc * mm + nn] += alpha * s;
+                        }
                     }
                 }
             }
@@ -184,25 +211,34 @@ void naive_sgemm_rtt(const int M, const int N, const int K, const float alpha,
 
 #else
 
-    constexpr int split_m = 16, split_n = 16, split_k = 32;
-
-#pragma omp parallel for collapse(1) schedule(guided) default(none) \
-        firstprivate(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc, split_m, split_n, split_k)
-    for (int m = 0; m < M; m += split_m) {
-        const int bound_mm = std::min(M - m, split_m);
-        for (int n = 0; n < N; n += split_n) {
-            const int bound_nn = std::min(N - n, split_n);
-            for (int mm = 0; mm < bound_mm; ++mm)
-                for (int nn = 0; nn < bound_nn; ++nn)
-                    C[ldc * m + n + ldc * mm + nn] *= beta;
-            for (int k = 0; k < K; k += split_k) {
-                const int bound_kk = std::min(K - k, split_k);
-                for (int mm = 0; mm < bound_mm; ++mm) {
-                    for (int nn = 0; nn < bound_nn; ++nn) {
-                        float s = 0.f;
+#pragma omp parallel default(none) \
+        firstprivate(M, N, K, alpha, A, lda, B, ldb, beta, C, ldc)
+    {
+        constexpr int split_m = 32, split_n = 32, split_k = 32;
+        float aa[split_m][split_k], bb[split_n][split_k];
+#pragma omp for collapse(2) schedule(guided)
+        for (int m = 0; m < M; m += split_m) {
+            for (int n = 0; n < N; n += split_n) {
+                const int bound_mm = (M - m < split_m) ? M - m : split_m;
+                const int bound_nn = (N - n < split_n) ? N - n : split_n;
+                for (int mm = 0; mm < bound_mm; ++mm)
+                    for (int nn = 0; nn < bound_nn; ++nn)
+                        C[ldc * m + n + ldc * mm + nn] *= beta;
+                for (int k = 0; k < K; k += split_k) {
+                    const int bound_kk = (K - k < split_k) ? K - k : split_k;
+                    for (int kk = 0; kk < bound_kk; ++kk)
+                        for (int mm = 0; mm < bound_mm; ++mm)
+                            aa[mm][kk] = A[lda * k + m + lda * kk + mm];
+                    for (int nn = 0; nn < bound_nn; ++nn)
                         for (int kk = 0; kk < bound_kk; ++kk)
-                            s += A[lda * k + m + lda * kk + mm] * B[ldb * n + k + ldb * nn + kk];
-                        C[ldc * m + n + ldc * mm + nn] += alpha * s;
+                            bb[nn][kk] = B[ldb * n + k + ldb * nn + kk];
+                    for (int mm = 0; mm < bound_mm; ++mm) {
+                        for (int nn = 0; nn < bound_nn; ++nn) {
+                            float s = 0.f;
+                            for (int kk = 0; kk < bound_kk; ++kk)
+                                s += aa[mm][kk] * bb[nn][kk];
+                            C[ldc * m + n + ldc * mm + nn] += alpha * s;
+                        }
                     }
                 }
             }
