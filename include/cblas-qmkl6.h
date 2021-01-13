@@ -20,6 +20,16 @@ typedef enum {
   CblasConjTrans = 113,
 } CBLAS_TRANSPOSE;
 
+typedef enum {
+  CblasUpper = 121,
+  CblasLower = 122,
+} CBLAS_UPLO;
+
+typedef enum {
+  CblasNonUnit = 131,
+  CblasUnit = 132,
+} CBLAS_DIAG;
+
 /* qmkl6.cpp */
 
 void qmkl6_init(void);
@@ -51,6 +61,10 @@ void cblas_sscal(int n, float a, float *x, int incx);
 void cblas_sgemv(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, int m, int n,
                  float alpha, const float *a, int lda, const float *x, int incx,
                  float beta, float *y, int incy);
+
+void cblas_stbmv(CBLAS_LAYOUT layout, CBLAS_UPLO uplo, CBLAS_TRANSPOSE trans,
+                 CBLAS_DIAG diag, int n, int k, const float *a, int lda,
+                 float *x, int incx);
 
 /* blas3.cpp */
 
