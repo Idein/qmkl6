@@ -45,7 +45,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends build-essential pkg-config cmake libblas-dev libopenblas-dev libatlas-base-dev
+          apt-get install -y --no-install-recommends build-essential pkg-config cmake libblas-dev libopenblas-dev libatlas-base-dev libfftw3-dev
           apt-get clean
           rm -rf /var/lib/apt/lists/*
       - name: Build tests
@@ -84,7 +84,7 @@ jobs:
       - name: Build tests
         run: |
           source /opt/intel/oneapi/setvars.sh
-          sed -i 's/MKLROOT/prefix/g' /opt/intel/oneapi/mkl/latest/tools/pkgconfig/mkl-dynamic-lp64-iomp.pc
+          sed -e 's,^\(prefix\)=.*$,\1=/opt/intel/oneapi/mkl/latest,' -e 's,MKLROOT,prefix,g' -e 's,^Cflags:.*$,& -I"${prefix}/include/fftw",' -i /opt/intel/oneapi/mkl/latest/tools/pkgconfig/mkl-dynamic-lp64-iomp.pc
           mkdir build/
           cd build/
           cmake .. -DCMAKE_CXX_COMPILER=icpx -DBUILD_TESTING=TRUE -DNO_QMKL6=TRUE
