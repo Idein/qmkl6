@@ -22,7 +22,7 @@ static int test_saxpy_single(const size_t n) {
 
   for (size_t i = 0; i < n; ++i) {
     x[i] = i;
-    y[i] = -i;
+    y[i] = -(float)i;
     y_orig[i] = coef * x[i] + y[i];
   }
 
