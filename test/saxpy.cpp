@@ -46,8 +46,8 @@ static int test_saxpy_single(const size_t n) {
   printf("Minimum/maximum absolute errors: %e, %e\n", err_abs_min, err_abs_max);
   printf("Minimum/maximum relative errors: %e, %e\n", err_rel_min, err_rel_max);
 
-  if (err_abs_max != 0.f || err_rel_max != 0.f) {
-    std::cerr << "error: The results contain too large errors" << std::endl;
+  if (err_rel_max > 1e-3f) {
+    std::cerr << "error: The maximum relative error is too large" << std::endl;
     return 1;
   }
 
@@ -102,7 +102,7 @@ static int test_saxpy_random(void) {
     printf("Minimum/maximum relative errors: %e, %e\n", err_rel_min,
            err_rel_max);
 
-    if (err_rel_max != 0.f) {
+    if (err_rel_max > 1e-3f) {
       std::cerr << "error: The maximum relative error is too large"
                 << std::endl;
       return 1;

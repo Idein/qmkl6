@@ -24,16 +24,18 @@ static int test_sdot_single(const size_t n) {
   const float res_act = cblas_sdot(n, x, 1, y, 1);
   const double end = dsecond();
 
+  const float err_abs = std::abs(res_exp - res_act);
+  const float err_rel = std::abs(err_abs / res_exp);
+
   printf("Result (actual): %e\n", res_act);
-  printf("Absolute error: %e\n", std::abs(res_exp - res_act));
-  printf("Relative error: %e\n", std::abs(1 - res_act / res_exp));
+  printf("Absolute error: %e\n", err_abs);
+  printf("Relative error: %e\n", err_rel);
 
   printf("%zu elements, %f sec, %f Mflop/s\n", n, end - start,
          n / (end - start) * 1e-6);
 
-  if (res_act != res_exp) {
-    std::cerr << "error: The actual result is different from expected"
-              << std::endl;
+  if (err_rel > 1e-3f) {
+    std::cerr << "error: Relative error is too large" << std::endl;
     return 1;
   }
 
