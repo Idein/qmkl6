@@ -9,6 +9,31 @@
 
 #include "cblasdefs.h"
 
+static int test_memcpy_single(const size_t n) {
+  uint32_t *x = new uint32_t[n], *y = new uint32_t[n];
+
+  std::iota(x, x + n, 0);
+  std::fill(y, y + n, 0);
+
+  const double start = dsecond();
+  memcpy(y, x, sizeof(uint32_t) * n);
+  const double end = dsecond();
+
+  printf("memcpy: %zu bytes, %f sec, %f MB/s\n", sizeof(uint32_t) * n,
+         end - start, sizeof(uint32_t) * n / (end - start) * 1e-6);
+
+  if (!std::all_of(y, y + n, [j = (uint32_t)0](const uint32_t v) mutable {
+        return v == j++;
+      })) {
+    std::cerr << "error: Copy is not complete" << std::endl;
+    return 1;
+  }
+
+  delete x;
+  delete y;
+  return 0;
+}
+
 static int test_scopy_single(const size_t n) {
   uint32_t *x = (uint32_t *)mkl_malloc(sizeof(*x) * n, 64),
            *y = (uint32_t *)mkl_calloc(n, sizeof(*y), 64);
@@ -120,6 +145,9 @@ int main(void) {
   setlinebuf(stdout);
 
   int ret;
+
+  ret = test_memcpy_single(1 << 24);
+  if (ret) return ret;
 
   ret = test_scopy_single(1 << 24);
   if (ret) return ret;
