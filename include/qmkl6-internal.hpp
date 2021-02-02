@@ -2,7 +2,7 @@
 #define _QMKL6_INTERNAL_HPP_
 
 #include <cstring>
-#include <unordered_map>
+#include <map>
 
 #define XERBLA(info)                        \
   do {                                      \
@@ -16,12 +16,12 @@ class qmkl6_context {
   MKLExitHandler exit_handler = exit;
 
   struct memory_area {
-    size_t alloc_size;
+    size_t alloc_size, alloc_size_aligned;
     uint32_t handle, bus_addr_aligned;
     void *virt_addr;
   };
 
-  std::unordered_map<const void *, struct memory_area> memory_map;
+  std::map<const void *, struct memory_area> memory_map;
 
   uint32_t unif_handle, qpu_sasum_handle, qpu_saxpy_handle, qpu_scopy_handle,
       qpu_sdot_handle, qpu_snrm2_handle, qpu_sscal_handle, qpu_sgemv_n_handle,
