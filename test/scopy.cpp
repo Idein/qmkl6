@@ -1,8 +1,10 @@
+#include <algorithm>
 #include <cinttypes>
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <numeric>
 #include <random>
 
 #include "cblasdefs.h"
@@ -86,6 +88,43 @@ static int test_scopy_random(void) {
   return 0;
 }
 
+static int test_scopy_partial(const size_t n) {
+  uint32_t *x = (uint32_t *)mkl_malloc(sizeof(*x) * n, 64),
+           *y = (uint32_t *)mkl_malloc(sizeof(*y) * n, 64);
+  std::iota(x, x + n, 0);
+
+  std::default_random_engine gen;
+  std::uniform_int_distribution<size_t> dist;
+
+  for (unsigned i = 0; i < 20; ++i) {
+    dist.param(decltype(dist)::param_type(1, n));
+    const size_t len = dist(gen);
+
+    dist.param(decltype(dist)::param_type(0, n - len));
+    const size_t offset = dist(gen);
+
+    printf("Testing n = %zu, len = %zu, offset = %zu\n", n, len, offset);
+
+    std::fill(y, y + n, 0);
+    cblas_scopy(len, (const float *)x + offset, 1, (float *)y, 1);
+
+    if (!std::all_of(y, y + len, [j = offset](const uint32_t v) mutable {
+          return v == j++;
+        })) {
+      std::cerr << "error: Short copy" << std::endl;
+      return 1;
+    }
+    if (!std::all_of(y + len, y + n, [](const uint32_t v) { return v == 0; })) {
+      std::cerr << "error: Extra copy" << std::endl;
+      return 1;
+    }
+  }
+
+  mkl_free(x);
+  mkl_free(y);
+  return 0;
+}
+
 int main(void) {
   setlinebuf(stdout);
 
@@ -95,6 +134,9 @@ int main(void) {
   if (ret) return ret;
 
   ret = test_scopy_random();
+  if (ret) return ret;
+
+  ret = test_scopy_partial(1 << 24);
   if (ret) return ret;
 
   return 0;
