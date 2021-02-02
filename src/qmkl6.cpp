@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <iterator>
 
 #include <drm_v3d.h>
 
@@ -105,15 +106,19 @@ void qmkl6_context::free_memory(const size_t size, const uint32_t handle,
 
 void qmkl6_context::locate_virt(const void *const virt_addr, uint32_t &handle,
                                 uint32_t &bus_addr) {
-  const auto area = memory_map.find(virt_addr);
-  if (area == memory_map.end()) {
-    fprintf(stderr, "error: Memory area starting at %p is not known\n",
-            virt_addr);
+  const auto area = memory_map.upper_bound(virt_addr);
+
+  if (area == memory_map.begin() ||
+      !(std::prev(area)->first <= virt_addr &&
+        (uintptr_t)virt_addr < (uintptr_t)std::prev(area)->first +
+                                   std::prev(area)->second.alloc_size)) {
+    fprintf(stderr, "Memory area including %p is not known\n", virt_addr);
     XERBLA(1);
   }
 
-  handle = area->second.handle;
-  bus_addr = area->second.bus_addr_aligned;
+  handle = std::prev(area)->second.handle;
+  bus_addr = std::prev(area)->second.bus_addr_aligned +
+             ((uintptr_t)virt_addr - (uintptr_t)std::prev(area)->first);
 }
 
 void qmkl6_context::execute_qpu_code(const uint32_t qpu_code_bus,
