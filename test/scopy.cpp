@@ -13,15 +13,9 @@ static int test_scopy_single(const size_t n) {
   uint32_t *x = (uint32_t *)mkl_malloc(sizeof(*x) * n, 64),
            *y = (uint32_t *)mkl_calloc(n, sizeof(*y), 64);
 
-  uint64_t sum = 0;
-  for (size_t i = 0; i < n; ++i) sum += x[i] = i;
-  printf("Sum (expected): %" PRIu64 "\n", sum);
+  std::iota(x, x + n, 0);
 
-  sum = 0;
-  for (size_t i = 0; i < n; ++i) sum += y[i];
-  printf("Sum (before execution): %" PRIu64 "\n", sum);
-
-  if (sum != 0) {
+  if (std::accumulate(y, y + n, 0) != 0) {
     std::cerr << "error: Clear-allocated array is not zeroed" << std::endl;
     return 1;
   }
@@ -29,16 +23,13 @@ static int test_scopy_single(const size_t n) {
   const double start = dsecond();
   cblas_scopy(n, (const float *)x, 1, (float *)y, 1);
   const double end = dsecond();
-  printf("%zu bytes, %f sec, %f MB/s\n", sizeof(uint32_t) * n, end - start,
-         sizeof(uint32_t) * n / (end - start) * 1e-6);
+  printf("scopy: %zu bytes, %f sec, %f MB/s\n", sizeof(uint32_t) * n,
+         end - start, sizeof(uint32_t) * n / (end - start) * 1e-6);
 
-  sum = 0;
-  for (size_t i = 0; i < n; ++i) sum += y[i];
-  printf("Sum (actual): %" PRIu64 "\n", sum);
-
-  if (sum != (uint64_t)n * (n - 1) >> 1) {
-    std::cerr << "error: The actual sum is different from expected"
-              << std::endl;
+  if (!std::all_of(y, y + n, [j = (uint32_t)0](const uint32_t v) mutable {
+        return v == j++;
+      })) {
+    std::cerr << "error: Copy is not complete" << std::endl;
     return 1;
   }
 
