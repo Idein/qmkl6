@@ -1,4 +1,4 @@
-on: [push]
+on: push
 
 jobs:
 
@@ -21,3 +21,29 @@ jobs:
             clang-format "$f" | diff -u "$f" - || ret=1
           done <<<"$(git ls-files \*.cpp \*.h \*.hpp)"
           exit "$ret"
+
+  run-tests:
+    runs-on: ubuntu-latest
+    container: debian:buster
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install required packages
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential pkg-config cmake libblas-dev libopenblas-dev libatlas-base-dev
+          apt-get clean
+          rm -rf /var/lib/apt/lists/*
+      - name: Build tests
+        run: |
+          mkdir build/
+          cd build/
+          cmake .. -DBUILD_TESTING=TRUE -DNO_QMKL6=TRUE
+          make
+      - name: Run tests
+        run: |
+          tail -n +1 /proc/cpuinfo /proc/meminfo
+          echo
+          cd build/
+          ctest -V
