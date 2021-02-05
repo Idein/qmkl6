@@ -13,7 +13,7 @@ static int test_sasum_single(const size_t n) {
 
   float asum_exp = 0.f;
   for (size_t i = 0; i < n; ++i) {
-    x[i] = (i & 1) ? -i : i;
+    x[i] = (i & 1) ? -(float)i : i;
     asum_exp += i;
   }
 
