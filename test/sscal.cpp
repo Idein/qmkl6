@@ -35,7 +35,7 @@ static int test_sscal_single(const size_t n) {
   printf("Minimum/maximum relative errors: %e, %e\n", err_rel_min, err_rel_max);
 
   if (err_rel_max > 1e-3f) {
-    std::cerr << "error: Relative error is too large\n" << std::endl;
+    std::cerr << "error: Relative error is too large" << std::endl;
     return 1;
   }
 

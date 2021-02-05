@@ -72,7 +72,7 @@ static int test_stbmv_diag_single(const int n, const int lda, const int incx,
       end1 - start1, n / (end0 - start0) * 1e-6, n / (end1 - start1) * 1e-6);
 
   if (err_rel_max > 1e-3f) {
-    std::cerr << "error: Absolute error is too large\n" << std::endl;
+    std::cerr << "error: Absolute error is too large" << std::endl;
     return 1;
   }
 

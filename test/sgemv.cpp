@@ -116,7 +116,7 @@ static int test_sgemv_single(const CBLAS_LAYOUT layout,
          (2. * xlen * ylen + ylen) / (end - start) * 1e-6);
 
   if (err_rel_max > 1e-3f) {
-    std::cerr << "error: Absolute error is too large\n" << std::endl;
+    std::cerr << "error: Absolute error is too large" << std::endl;
     return 1;
   }
 
