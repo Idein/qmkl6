@@ -1,0 +1,23 @@
+on: [push]
+
+jobs:
+
+  code-format-c-cpp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install required packages
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends git clang-format
+          sudo apt-get clean
+          sudo rm -rf /var/lib/apt/lists/*
+      - name: Run clang-format
+        run: |
+          ret=0
+          while read f; do
+            clang-format "$f" | diff -u "$f" - || ret=1
+          done <<<"$(git ls-files \*.cpp \*.h \*.hpp)"
+          exit "$ret"

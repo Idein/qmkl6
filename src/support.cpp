@@ -15,7 +15,7 @@ int mkl_set_exit_handler(const MKLExitHandler myexit) {
 }
 
 void xerbla(const char* const srname, const int* const info,
-            const int len [[maybe_unused]]) {
+            [[maybe_unused]] const int len) {
   fprintf(stderr, "QMKL6 error: %s: %d\n", srname, *info);
   qmkl6.exit_handler(EXIT_FAILURE);
 }
