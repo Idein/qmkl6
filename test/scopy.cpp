@@ -15,9 +15,9 @@ static int test_memcpy_single(const size_t n) {
   std::iota(x, x + n, 0);
   std::fill(y, y + n, 0);
 
-  const double start = dsecond();
+  const double start = dsecnd();
   memcpy(y, x, sizeof(uint32_t) * n);
-  const double end = dsecond();
+  const double end = dsecnd();
 
   printf("memcpy: %zu bytes, %f sec, %f MB/s\n", sizeof(uint32_t) * n,
          end - start, sizeof(uint32_t) * n / (end - start) * 1e-6);
@@ -29,8 +29,8 @@ static int test_memcpy_single(const size_t n) {
     return 1;
   }
 
-  delete x;
-  delete y;
+  delete[] x;
+  delete[] y;
   return 0;
 }
 
@@ -45,9 +45,9 @@ static int test_scopy_single(const size_t n) {
     return 1;
   }
 
-  const double start = dsecond();
+  const double start = dsecnd();
   cblas_scopy(n, (const float *)x, 1, (float *)y, 1);
-  const double end = dsecond();
+  const double end = dsecnd();
   printf("scopy: %zu bytes, %f sec, %f MB/s\n", sizeof(uint32_t) * n,
          end - start, sizeof(uint32_t) * n / (end - start) * 1e-6);
 

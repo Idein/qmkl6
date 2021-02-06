@@ -20,9 +20,9 @@ static int test_sdot_single(const size_t n) {
   }
   printf("Result (expected): %e\n", res_exp);
 
-  const double start = dsecond();
+  const double start = dsecnd();
   const float res_act = cblas_sdot(n, x, 1, y, 1);
-  const double end = dsecond();
+  const double end = dsecnd();
 
   const float err_abs = std::abs(res_exp - res_act);
   const float err_rel = std::abs(err_abs / res_exp);

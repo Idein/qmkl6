@@ -59,3 +59,39 @@ jobs:
           echo
           cd build/
           ctest -V
+
+  run-tests-mkl:
+    runs-on: ubuntu-latest
+    container: ubuntu:focal
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Install required packages
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl gnupg pkg-config make cmake binutils libstdc++-9-dev
+          curl --silent 'https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB' | apt-key add -
+          echo 'deb https://apt.repos.intel.com/oneapi all main' | tee -a /etc/apt/sources.list.d/intel.list
+          apt-get update
+          apt-get install -y --no-install-recommends intel-oneapi-compiler-dpcpp-cpp intel-oneapi-mkl-devel
+          apt-get clean
+          rm -rf /var/lib/apt/lists/*
+      - uses: actions/checkout@v2
+      - name: Build tests
+        run: |
+          source /opt/intel/oneapi/setvars.sh
+          sed -i 's/MKLROOT/prefix/g' /opt/intel/oneapi/mkl/latest/tools/pkgconfig/mkl-dynamic-lp64-iomp.pc
+          mkdir build/
+          cd build/
+          cmake .. -DCMAKE_CXX_COMPILER=icpx -DBUILD_TESTING=TRUE -DNO_QMKL6=TRUE
+          make
+      - name: Run tests
+        run: |
+          tail -n +1 /proc/cpuinfo /proc/meminfo
+          echo
+          source /opt/intel/oneapi/setvars.sh
+          cd build/
+          ctest -V

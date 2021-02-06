@@ -41,7 +41,7 @@ typedef void (*MKLExitHandler)(int why);
 
 int mkl_set_exit_handler(MKLExitHandler myexit);
 void xerbla(const char *srname, const int *info, int len);
-double dsecond(void);
+double dsecnd(void);
 void *mkl_malloc(size_t alloc_size, int alignment);
 void *mkl_calloc(size_t num, size_t size, int alignment);
 void mkl_free(void *a_ptr);

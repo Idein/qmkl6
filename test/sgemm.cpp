@@ -345,10 +345,10 @@ static int test_sgemm_single(const CBLAS_LAYOUT layout,
   naive_sgemm(layout, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C0,
               ldc);
 
-  const double start = dsecond();
+  const double start = dsecnd();
   cblas_sgemm(layout, transa, transb, m, n, k, alpha, A, lda, B, ldb, beta, C1,
               ldc);
-  const double end = dsecond();
+  const double end = dsecnd();
 
   float err_abs_min = HUGE_VALF, err_abs_max = -HUGE_VALF;
   float err_rel_min = HUGE_VALF, err_rel_max = -HUGE_VALF;

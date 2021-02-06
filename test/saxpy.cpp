@@ -26,9 +26,9 @@ static int test_saxpy_single(const size_t n) {
     y_orig[i] = coef * x[i] + y[i];
   }
 
-  const double start = dsecond();
+  const double start = dsecnd();
   cblas_saxpy(n, coef, x, 1, y, 1);
-  const double end = dsecond();
+  const double end = dsecnd();
 
   printf("%zu elements, %f sec, %f Mflop/s\n", n, end - start,
          n / (end - start) * 1e-6);
