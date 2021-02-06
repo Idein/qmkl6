@@ -96,9 +96,9 @@ static int test_sgemv_single(const CBLAS_LAYOUT layout,
 
   naive_sgemv(layout, trans, m, n, alpha, a, lda, x, incx, beta, y0, incy);
 
-  const double start = dsecond();
+  const double start = dsecnd();
   cblas_sgemv(layout, trans, m, n, alpha, a, lda, x, incx, beta, y1, incy);
-  const double end = dsecond();
+  const double end = dsecnd();
 
   float err_abs_min = HUGE_VALF, err_abs_max = -HUGE_VALF;
   float err_rel_min = HUGE_VALF, err_rel_max = -HUGE_VALF;

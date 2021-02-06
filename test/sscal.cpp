@@ -14,9 +14,9 @@ static int test_sscal_single(const size_t n) {
 
   for (size_t i = 0; i < n; ++i) x[i] = i;
 
-  const double start = dsecond();
+  const double start = dsecnd();
   cblas_sscal(n, a, x, 1);
-  const double end = dsecond();
+  const double end = dsecnd();
   printf("%zu bytes, %f sec, %f MB/s\n", sizeof(*x) * n, end - start,
          sizeof(*x) * n / (end - start) * 1e-6);
 

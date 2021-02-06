@@ -19,9 +19,9 @@ static int test_sasum_single(const size_t n) {
 
   printf("Absolute sum (expected): %e\n", asum_exp);
 
-  const double start = dsecond();
+  const double start = dsecnd();
   const float asum_act = cblas_sasum(n, x, 1);
-  const double end = dsecond();
+  const double end = dsecnd();
 
   printf("Absolute sum (actual): %e\n", asum_act);
 

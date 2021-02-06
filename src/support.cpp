@@ -20,7 +20,7 @@ void xerbla(const char* const srname, const int* const info,
   qmkl6.exit_handler(EXIT_FAILURE);
 }
 
-double dsecond(void) {
+double dsecnd(void) {
   struct timespec t;
 
   clock_gettime(CLOCK_MONOTONIC, &t);

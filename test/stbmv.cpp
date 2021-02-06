@@ -42,15 +42,15 @@ static int test_stbmv_diag_single(const int n, const int lda, const int incx,
   std::generate(x0, x0 + (1 + (n - 1) * incx), std::bind(dist, gen));
   memcpy(x1, x0, (1 + (n - 1) * incx) * sizeof(float));
 
-  const double start0 = dsecond();
+  const double start0 = dsecnd();
   naive_stbmv(CblasRowMajor, CblasUpper, CblasNoTrans, CblasNonUnit, n, 0, a,
               lda, x0, incx);
-  const double end0 = dsecond();
+  const double end0 = dsecnd();
 
-  const double start1 = dsecond();
+  const double start1 = dsecnd();
   cblas_stbmv(CblasRowMajor, CblasUpper, CblasNoTrans, CblasNonUnit, n, 0, a,
               lda, x1, incx);
-  const double end1 = dsecond();
+  const double end1 = dsecnd();
 
   float err_abs_min = HUGE_VALF, err_abs_max = -HUGE_VALF;
   float err_rel_min = HUGE_VALF, err_rel_max = -HUGE_VALF;

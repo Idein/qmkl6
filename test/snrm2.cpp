@@ -20,9 +20,9 @@ static int test_snrm2_single(const size_t n) {
 
   printf("Euclidean norm (expected): %e\n", nrm2_exp);
 
-  const double start = dsecond();
+  const double start = dsecnd();
   const float nrm2_act = cblas_snrm2(n, x, 1);
-  const double end = dsecond();
+  const double end = dsecnd();
 
   printf("Euclidean norm (actual): %e\n", nrm2_act);
 
