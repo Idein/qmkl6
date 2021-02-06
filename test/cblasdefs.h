@@ -12,13 +12,15 @@ typedef CBLAS_ORDER CBLAS_LAYOUT;
 #include <cblas-netlib.h>
 #elif defined(CBLAS_openblas)
 #include <cblas-openblas.h>
+#elif defined(CBLAS_mkl)
+#include <mkl.h>
 #elif defined(CBLAS_qmkl6)
 #include <cblas-qmkl6.h>
 #else
 #error "CBLAS_* is not defined"
 #endif
 
-#if !defined(CBLAS_qmkl6)
+#if !defined(CBLAS_mkl) && !defined(CBLAS_qmkl6)
 
 #include <errno.h>
 #include <stdint.h>
@@ -48,13 +50,13 @@ __attribute__((__unused__)) static void mkl_free(void* const a_ptr) {
   free(a_ptr);
 }
 
-__attribute__((__unused__)) static double dsecond(void) {
+__attribute__((__unused__)) static double dsecnd(void) {
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
   return t.tv_sec + t.tv_nsec * 1e-9;
 }
 
-#endif /* !defined(CBLAS_qmkl6) */
+#endif /* !defined(CBLAS_mkl) && !defined(CBLAS_qmkl6) */
 
 #ifdef __cplusplus
 }
