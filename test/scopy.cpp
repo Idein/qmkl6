@@ -29,8 +29,8 @@ static int test_memcpy_single(const size_t n) {
     return 1;
   }
 
-  delete x;
-  delete y;
+  delete[] x;
+  delete[] y;
   return 0;
 }
 
