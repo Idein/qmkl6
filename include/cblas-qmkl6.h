@@ -30,11 +30,6 @@ typedef enum {
   CblasUnit = 132,
 } CBLAS_DIAG;
 
-/* qmkl6.cpp */
-
-void qmkl6_init(void);
-void qmkl6_finalize(void);
-
 /* support.cpp */
 
 typedef void (*MKLExitHandler)(int why);
