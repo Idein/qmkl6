@@ -58,6 +58,19 @@ __attribute__((__unused__)) static double dsecnd(void) {
 
 #endif /* !defined(CBLAS_mkl) && !defined(CBLAS_qmkl6) */
 
+#if defined(CBLAS_mkl)
+
+__attribute__((__unused__)) static void cblas_somatcopy(
+    const CBLAS_LAYOUT layout, const CBLAS_TRANSPOSE trans, const int rows,
+    const int cols, const float alpha, const float* const a, const int lda,
+    float* const b, const int ldb) {
+  mkl_somatcopy(layout == CblasRowMajor ? 'r' : 'c',
+                trans == CblasNoTrans ? 'n' : 't', rows, cols, alpha, a, lda, b,
+                ldb);
+}
+
+#endif /* defined(CBLAS_mkl) */
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
