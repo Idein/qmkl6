@@ -68,6 +68,12 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa,
                  const float *a, int lda, const float *b, int ldb, float beta,
                  float *c, int ldc);
 
+/* blaslike.cpp */
+
+void cblas_somatcopy(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, int rows,
+                     int cols, float alpha, const float *a, int lda, float *b,
+                     int ldb);
+
 #if defined(__cplusplus)
 }
 #endif
