@@ -30,11 +30,6 @@ typedef enum {
   CblasUnit = 132,
 } CBLAS_DIAG;
 
-/* qmkl6.cpp */
-
-void qmkl6_init(void);
-void qmkl6_finalize(void);
-
 /* support.cpp */
 
 typedef void (*MKLExitHandler)(int why);
@@ -72,6 +67,12 @@ void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa,
                  CBLAS_TRANSPOSE transb, int m, int n, int k, float alpha,
                  const float *a, int lda, const float *b, int ldb, float beta,
                  float *c, int ldc);
+
+/* blaslike.cpp */
+
+void cblas_somatcopy(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, int rows,
+                     int cols, float alpha, const float *a, int lda, float *b,
+                     int ldb);
 
 #if defined(__cplusplus)
 }
