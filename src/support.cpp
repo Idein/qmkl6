@@ -37,7 +37,8 @@ void* mkl_malloc(const size_t alloc_size, int alignment) {
   void* const virt_addr =
       qmkl6.alloc_memory(alloc_size_aligned, handle, bus_addr);
 
-  const uint32_t offset = ((uint32_t)alignment - bus_addr) & (alignment - 1);
+  /* bus_addr + offset ≡ 0 (mod alignment) */
+  const uint32_t offset = -bus_addr & (alignment - 1);
   void* const virt_addr_aligned = (void*)((uintptr_t)virt_addr + offset);
 
   struct qmkl6_context::memory_area area = {
