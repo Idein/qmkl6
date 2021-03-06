@@ -25,14 +25,14 @@ foreach (blas IN ITEMS qmkl6 netlib openblas atlas mkl)
         continue()
     endif ()
 
-    foreach (test IN ITEMS mem sasum saxpy scopy sdot snrm2 sscal sgemv stbmv
-                           sgemm somatcopy)
+    foreach (test IN ITEMS mem asum axpy copy dot nrm2 scal gemv tbmv gemm
+                           omatcopy)
 
         if (test STREQUAL mem AND NOT blas STREQUAL qmkl6)
             continue()
         endif ()
 
-        if (test STREQUAL somatcopy
+        if (test STREQUAL omatcopy
             AND NOT blas MATCHES "^(openblas|mkl|qmkl6)$")
             continue()
         endif ()
