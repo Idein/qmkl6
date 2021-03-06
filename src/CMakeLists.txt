@@ -1,26 +1,27 @@
 include_directories(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_SOURCE_DIR}/include)
 add_compile_options(-pipe -W -Wall -Wextra -O2 -g -std=c++17)
 
-function (add_qhex6_from_py name)
+function (generate_qhex6_from_py name input)
 
     list(JOIN ARGN " " ARGN_string)
 
     add_custom_command(
-        DEPENDS ${name}.py
-        OUTPUT ${name}.qhex6
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${name}.py
-                ${ARGN} >${CMAKE_CURRENT_BINARY_DIR}/${name}.qhex6
-        COMMENT "Assembling ${name}.py with arguments: ${ARGN_string}"
+        DEPENDS "${input}"
+        OUTPUT "${name}.qhex6"
+        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/${input}"
+                ${ARGN} > "${name}.qhex6"
+        VERBATIM
+        COMMENT "Generating ${name}.qhex6 from ${input} ${ARGN_string}"
     )
 
 endfunction ()
 
-add_qhex6_from_py(sasum 8 5 0)
-add_qhex6_from_py(saxpy 8 1 0)
-add_qhex6_from_py(scopy 8 0 0)
-add_qhex6_from_py(sdot 8 4 0)
-add_qhex6_from_py(snrm2 8 5 0)
-add_qhex6_from_py(sscal 8 0 0)
+generate_qhex6_from_py(sasum sasum.py 8 5 0)
+generate_qhex6_from_py(saxpy saxpy.py 8 1 0)
+generate_qhex6_from_py(scopy scopy.py 8 0 0)
+generate_qhex6_from_py(sdot sdot.py 8 4 0)
+generate_qhex6_from_py(snrm2 snrm2.py 8 5 0)
+generate_qhex6_from_py(sscal sscal.py 8 0 0)
 
 set_property(SOURCE blas1.cpp APPEND PROPERTY
         OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sasum.qhex6
@@ -30,19 +31,19 @@ set_property(SOURCE blas1.cpp APPEND PROPERTY
                        ${CMAKE_CURRENT_BINARY_DIR}/snrm2.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/sscal.qhex6)
 
-add_qhex6_from_py(sgemv_n 8 0)
-add_qhex6_from_py(sgemv_t 8 0)
-add_qhex6_from_py(stbmv 8 1 0)
+generate_qhex6_from_py(sgemv_n sgemv_n.py 8 0)
+generate_qhex6_from_py(sgemv_t sgemv_t.py 8 0)
+generate_qhex6_from_py(stbmv stbmv.py 8 1 0)
 
 set_property(SOURCE blas2.cpp APPEND PROPERTY
         OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sgemv_n.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/sgemv_t.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/stbmv.qhex6)
 
-add_qhex6_from_py(sgemm_rnn 8 0)
-add_qhex6_from_py(sgemm_rnt 8 0)
-add_qhex6_from_py(sgemm_rtn 8 0)
-add_qhex6_from_py(sgemm_rtt 8 0)
+generate_qhex6_from_py(sgemm_rnn sgemm_rnn.py 8 0)
+generate_qhex6_from_py(sgemm_rnt sgemm_rnt.py 8 0)
+generate_qhex6_from_py(sgemm_rtn sgemm_rtn.py 8 0)
+generate_qhex6_from_py(sgemm_rtt sgemm_rtt.py 8 0)
 
 set_property(SOURCE blas3.cpp APPEND PROPERTY
         OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sgemm_rnn.qhex6
