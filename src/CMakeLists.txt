@@ -34,11 +34,13 @@ set_property(SOURCE blas1.cpp APPEND PROPERTY
 generate_qhex6_from_py(sgemv_n sgemv_n.py 8 0)
 generate_qhex6_from_py(sgemv_t sgemv_t.py 8 0)
 generate_qhex6_from_py(stbmv stbmv.py 8 1 0)
+generate_qhex6_from_py(ctbmv ctbmv.py 8 1 0)
 
 set_property(SOURCE blas2.cpp APPEND PROPERTY
         OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sgemv_n.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/sgemv_t.qhex6
-                       ${CMAKE_CURRENT_BINARY_DIR}/stbmv.qhex6)
+                       ${CMAKE_CURRENT_BINARY_DIR}/stbmv.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/ctbmv.qhex6)
 
 generate_qhex6_from_py(sgemm_rnn sgemm_rnn.py 8 0)
 generate_qhex6_from_py(sgemm_rnt sgemm_rnt.py 8 0)

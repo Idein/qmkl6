@@ -61,6 +61,10 @@ void cblas_stbmv(CBLAS_LAYOUT layout, CBLAS_UPLO uplo, CBLAS_TRANSPOSE trans,
                  CBLAS_DIAG diag, int n, int k, const float *a, int lda,
                  float *x, int incx);
 
+void cblas_ctbmv(CBLAS_LAYOUT layout, CBLAS_UPLO uplo, CBLAS_TRANSPOSE trans,
+                 CBLAS_DIAG diag, int n, int k, const void *a, int lda, void *x,
+                 int incx);
+
 /* blas3.cpp */
 
 void cblas_sgemm(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE transa,
