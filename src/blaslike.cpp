@@ -15,8 +15,8 @@ static const uint64_t qpu_somatcopy_t_4x4_orig[] = {
 #include "somatcopy_t_4x4.qhex6"
 };
 
-static const uint64_t qpu_somatcopy_t_512x32_orig[] = {
-#include "somatcopy_t_512x32.qhex6"
+static const uint64_t qpu_somatcopy_t_256x32_orig[] = {
+#include "somatcopy_t_256x32.qhex6"
 };
 
 void cblas_somatcopy(const CBLAS_LAYOUT layout, const CBLAS_TRANSPOSE trans,
@@ -98,8 +98,8 @@ void cblas_somatcopy(const CBLAS_LAYOUT layout, const CBLAS_TRANSPOSE trans,
   qmkl6.execute_qpu_code(
       (trans == CblasNoTrans)
           ? qmkl6.qpu_somatcopy_n_bus
-          : (qmkl6.unif[0] % 512 == 0 && qmkl6.unif[1] % 32 == 0)
-                ? qmkl6.qpu_somatcopy_t_512x32_bus
+          : (qmkl6.unif[0] % 256 == 0 && qmkl6.unif[1] % 32 == 0)
+                ? qmkl6.qpu_somatcopy_t_256x32_bus
                 : qmkl6.qpu_somatcopy_t_4x4_bus,
       qmkl6.unif_bus, num_qpus, 1, b_handle);
 
@@ -116,16 +116,16 @@ void qmkl6_context::init_blaslike(void) {
       qpu_somatcopy_t_4x4_bus);
   memcpy(qpu_somatcopy_t_4x4, qpu_somatcopy_t_4x4_orig,
          sizeof(qpu_somatcopy_t_4x4_orig));
-  qpu_somatcopy_t_512x32 = (uint64_t*)alloc_memory(
-      sizeof(qpu_somatcopy_t_512x32_orig), qpu_somatcopy_t_512x32_handle,
-      qpu_somatcopy_t_512x32_bus);
-  memcpy(qpu_somatcopy_t_512x32, qpu_somatcopy_t_512x32_orig,
-         sizeof(qpu_somatcopy_t_512x32_orig));
+  qpu_somatcopy_t_256x32 = (uint64_t*)alloc_memory(
+      sizeof(qpu_somatcopy_t_256x32_orig), qpu_somatcopy_t_256x32_handle,
+      qpu_somatcopy_t_256x32_bus);
+  memcpy(qpu_somatcopy_t_256x32, qpu_somatcopy_t_256x32_orig,
+         sizeof(qpu_somatcopy_t_256x32_orig));
 }
 
 void qmkl6_context::finalize_blaslike(void) {
-  free_memory(sizeof(qpu_somatcopy_t_512x32_orig),
-              qpu_somatcopy_t_512x32_handle, qpu_somatcopy_t_512x32);
+  free_memory(sizeof(qpu_somatcopy_t_256x32_orig),
+              qpu_somatcopy_t_256x32_handle, qpu_somatcopy_t_256x32);
   free_memory(sizeof(qpu_somatcopy_t_4x4_orig), qpu_somatcopy_t_4x4_handle,
               qpu_somatcopy_t_4x4);
   free_memory(sizeof(qpu_somatcopy_n_orig), qpu_somatcopy_n_handle,
