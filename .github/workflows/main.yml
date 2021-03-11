@@ -4,20 +4,21 @@ jobs:
 
   code-format-c-cpp:
     runs-on: ubuntu-latest
+    container: ubuntu:focal
     steps:
-      - uses: actions/checkout@v2
       - name: Install required packages
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends git clang-format
-          sudo apt-get clean
-          sudo rm -rf /var/lib/apt/lists/*
-          clang-format -version
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates git clang-format
+          apt-get clean
+          rm -rf /var/lib/apt/lists/*
+          clang-format --version
+      - uses: actions/checkout@v2
       - name: Run clang-format
         run: |
-          git ls-files '*.cpp' '*.h' '*.hpp' | xargs clang-format -verbose -i
+          git ls-files '*.cpp' '*.h' '*.hpp' | xargs clang-format --verbose -i
           git diff --exit-code
 
   code-format-py:
