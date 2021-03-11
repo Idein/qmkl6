@@ -78,6 +78,10 @@ void cblas_somatcopy(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, int rows,
                      int cols, float alpha, const float *a, int lda, float *b,
                      int ldb);
 
+void cblas_comatcopy(CBLAS_LAYOUT layout, CBLAS_TRANSPOSE trans, int rows,
+                     int cols, const void *alpha, const void *a, int lda,
+                     void *b, int ldb);
+
 #if defined(__cplusplus)
 }
 #endif
