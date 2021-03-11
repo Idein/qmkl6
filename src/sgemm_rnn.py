@@ -1,7 +1,6 @@
 
 import sys
 
-from videocore6 import pack_unpack
 from videocore6.assembler import assemble, qpu
 
 
