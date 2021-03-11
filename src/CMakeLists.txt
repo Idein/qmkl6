@@ -34,11 +34,13 @@ set_property(SOURCE blas1.cpp APPEND PROPERTY
 generate_qhex6_from_py(sgemv_n sgemv_n.py 8 0)
 generate_qhex6_from_py(sgemv_t sgemv_t.py 8 0)
 generate_qhex6_from_py(stbmv stbmv.py 8 1 0)
+generate_qhex6_from_py(ctbmv ctbmv.py 8 1 0)
 
 set_property(SOURCE blas2.cpp APPEND PROPERTY
         OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/sgemv_n.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/sgemv_t.qhex6
-                       ${CMAKE_CURRENT_BINARY_DIR}/stbmv.qhex6)
+                       ${CMAKE_CURRENT_BINARY_DIR}/stbmv.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/ctbmv.qhex6)
 
 generate_qhex6_from_py(sgemm_rnn sgemm_rnn.py 8 0)
 generate_qhex6_from_py(sgemm_rnt sgemm_rnt.py 8 0)
@@ -53,12 +55,18 @@ set_property(SOURCE blas3.cpp APPEND PROPERTY
 
 generate_qhex6_from_py(somatcopy_n somatcopy_n.py 8 8 0)
 generate_qhex6_from_py(somatcopy_t_4x4 somatcopy_t.py 8 1 1 4 4 0)
-generate_qhex6_from_py(somatcopy_t_512x32 somatcopy_t.py 8 8 8 4 4 0)
+generate_qhex6_from_py(somatcopy_t_256x32 somatcopy_t.py 8 8 8 4 4 0)
+generate_qhex6_from_py(comatcopy_n comatcopy_n.py 8 4 0)
+generate_qhex6_from_py(comatcopy_t_4x4 comatcopy_t.py 8 1 1 4 4 0)
+generate_qhex6_from_py(comatcopy_t_128x32 comatcopy_t.py 8 4 8 4 4 0)
 
 set_property(SOURCE blaslike.cpp APPEND PROPERTY
         OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/somatcopy_n.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/somatcopy_t_4x4.qhex6
-                       ${CMAKE_CURRENT_BINARY_DIR}/somatcopy_t_512x32.qhex6)
+                       ${CMAKE_CURRENT_BINARY_DIR}/somatcopy_t_256x32.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/comatcopy_n.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/comatcopy_t_4x4.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/comatcopy_t_128x32.qhex6)
 
 add_library(qmkl6 SHARED qmkl6.cpp support.cpp blas1.cpp blas2.cpp blas3.cpp
                          blaslike.cpp)

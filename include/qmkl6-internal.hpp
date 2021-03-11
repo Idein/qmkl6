@@ -25,20 +25,23 @@ class qmkl6_context {
 
   uint32_t unif_handle, qpu_sasum_handle, qpu_saxpy_handle, qpu_scopy_handle,
       qpu_sdot_handle, qpu_snrm2_handle, qpu_sscal_handle, qpu_sgemv_n_handle,
-      qpu_sgemv_t_handle, qpu_stbmv_handle, qpu_sgemm_rnn_handle,
-      qpu_sgemm_rnt_handle, qpu_sgemm_rtn_handle, qpu_sgemm_rtt_handle,
-      qpu_somatcopy_n_handle, qpu_somatcopy_t_4x4_handle,
-      qpu_somatcopy_t_512x32_handle;
+      qpu_sgemv_t_handle, qpu_stbmv_handle, qpu_ctbmv_handle,
+      qpu_sgemm_rnn_handle, qpu_sgemm_rnt_handle, qpu_sgemm_rtn_handle,
+      qpu_sgemm_rtt_handle, qpu_somatcopy_n_handle, qpu_somatcopy_t_4x4_handle,
+      qpu_somatcopy_t_256x32_handle, qpu_comatcopy_n_handle,
+      qpu_comatcopy_t_4x4_handle, qpu_comatcopy_t_128x32_handle;
   uint32_t unif_bus, qpu_sasum_bus, qpu_saxpy_bus, qpu_scopy_bus, qpu_sdot_bus,
       qpu_snrm2_bus, qpu_sscal_bus, qpu_sgemv_n_bus, qpu_sgemv_t_bus,
-      qpu_stbmv_bus, qpu_sgemm_rnn_bus, qpu_sgemm_rnt_bus, qpu_sgemm_rtn_bus,
-      qpu_sgemm_rtt_bus, qpu_somatcopy_n_bus, qpu_somatcopy_t_4x4_bus,
-      qpu_somatcopy_t_512x32_bus;
+      qpu_stbmv_bus, qpu_ctbmv_bus, qpu_sgemm_rnn_bus, qpu_sgemm_rnt_bus,
+      qpu_sgemm_rtn_bus, qpu_sgemm_rtt_bus, qpu_somatcopy_n_bus,
+      qpu_somatcopy_t_4x4_bus, qpu_somatcopy_t_256x32_bus, qpu_comatcopy_n_bus,
+      qpu_comatcopy_t_4x4_bus, qpu_comatcopy_t_128x32_bus;
   uint32_t *unif;
   uint64_t *qpu_saxpy, *qpu_sasum, *qpu_scopy, *qpu_sdot, *qpu_snrm2,
-      *qpu_sscal, *qpu_sgemv_n, *qpu_sgemv_t, *qpu_stbmv, *qpu_sgemm_rnn,
-      *qpu_sgemm_rnt, *qpu_sgemm_rtn, *qpu_sgemm_rtt, *qpu_somatcopy_n,
-      *qpu_somatcopy_t_4x4, *qpu_somatcopy_t_512x32;
+      *qpu_sscal, *qpu_sgemv_n, *qpu_sgemv_t, *qpu_stbmv, *qpu_ctbmv,
+      *qpu_sgemm_rnn, *qpu_sgemm_rnt, *qpu_sgemm_rtn, *qpu_sgemm_rtt,
+      *qpu_somatcopy_n, *qpu_somatcopy_t_4x4, *qpu_somatcopy_t_256x32,
+      *qpu_comatcopy_n, *qpu_comatcopy_t_4x4, *qpu_comatcopy_t_128x32;
 
   uint64_t timeout_ns = UINT64_C(10'000'000'000);
 

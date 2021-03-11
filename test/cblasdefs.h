@@ -69,6 +69,16 @@ __attribute__((__unused__)) static void cblas_somatcopy(
                 ldb);
 }
 
+__attribute__((__unused__)) static void cblas_comatcopy(
+    const CBLAS_LAYOUT layout, const CBLAS_TRANSPOSE trans, const int rows,
+    const int cols, const void* const alpha, const void* const a, const int lda,
+    void* const b, const int ldb) {
+  mkl_comatcopy(layout == CblasRowMajor ? 'r' : 'c',
+                trans == CblasNoTrans ? 'n' : 't', rows, cols,
+                *(const MKL_Complex8*)alpha, (const MKL_Complex8*)a, lda,
+                (MKL_Complex8*)b, ldb);
+}
+
 #endif /* defined(CBLAS_mkl) */
 
 #ifdef __cplusplus

@@ -1,3 +1,4 @@
+#include <complex>
 #include <cstdint>
 #include <cstdio>
 
@@ -14,6 +15,10 @@ static const uint64_t qpu_sgemv_t_orig[] = {
 
 static const uint64_t qpu_stbmv_orig[] = {
 #include "stbmv.qhex6"
+};
+
+static const uint64_t qpu_ctbmv_orig[] = {
+#include "ctbmv.qhex6"
 };
 
 void cblas_sgemv(const CBLAS_LAYOUT layout, const CBLAS_TRANSPOSE trans,
@@ -185,6 +190,59 @@ void cblas_stbmv([[maybe_unused]] const CBLAS_LAYOUT layout,
   if (n > 0) qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, a_handle);
 }
 
+void cblas_ctbmv([[maybe_unused]] const CBLAS_LAYOUT layout,
+                 [[maybe_unused]] const CBLAS_UPLO uplo,
+                 [[maybe_unused]] const CBLAS_TRANSPOSE trans,
+                 [[maybe_unused]] const CBLAS_DIAG diag, int n, const int k,
+                 const void *const a, const int lda, void *const x,
+                 const int incx) {
+  if (n <= 0) {
+    fprintf(stderr, "error: n (%d) must be greater than zero\n", n);
+    XERBLA(1);
+  }
+  if (k != 0) {
+    fprintf(stderr, "error: Diagonal matrices are only supported for now\n");
+    XERBLA(1);
+  }
+  if (lda <= 0) {
+    fprintf(stderr, "error: lda (%d) must be greater than zero\n", lda);
+    XERBLA(1);
+  }
+  if (incx <= 0) {
+    fprintf(stderr, "error: incx (%d) must be greater than zero\n", incx);
+    XERBLA(1);
+  }
+
+  const unsigned num_queues = 2, num_threads = 16, num_qpus = 8,
+                 unroll = 1 << 1,
+                 align = num_queues * num_threads * num_qpus * unroll;
+  const int n_rem = n % align;
+  n -= n_rem;
+
+  uint32_t a_handle, x_handle, a_bus, x_bus;
+
+  if (n > 0) {
+    qmkl6.locate_virt(a, a_handle, a_bus);
+    qmkl6.locate_virt(x, x_handle, x_bus);
+
+    qmkl6.unif[0] = n;
+    qmkl6.unif[1] = a_bus;
+    qmkl6.unif[2] = lda;
+    qmkl6.unif[3] = x_bus;
+    qmkl6.unif[4] = incx;
+
+    qmkl6.execute_qpu_code(qmkl6.qpu_ctbmv_bus, qmkl6.unif_bus, num_qpus, 1,
+                           a_handle);
+  }
+
+  for (int i = 0, j = lda * n, k = incx * n; i < n_rem;
+       ++i, j += lda, k += incx)
+    static_cast<std::complex<float> *>(x)[k] *=
+        static_cast<const std::complex<float> *>(a)[j];
+
+  if (n > 0) qmkl6.wait_for_handles(qmkl6.timeout_ns, 1, a_handle);
+}
+
 void qmkl6_context::init_blas2(void) {
   qpu_sgemv_n = (uint64_t *)alloc_memory(sizeof(qpu_sgemv_n_orig),
                                          qpu_sgemv_n_handle, qpu_sgemv_n_bus);
@@ -197,9 +255,14 @@ void qmkl6_context::init_blas2(void) {
   qpu_stbmv = (uint64_t *)alloc_memory(sizeof(qpu_stbmv_orig), qpu_stbmv_handle,
                                        qpu_stbmv_bus);
   memcpy(qpu_stbmv, qpu_stbmv_orig, sizeof(qpu_stbmv_orig));
+
+  qpu_ctbmv = (uint64_t *)alloc_memory(sizeof(qpu_ctbmv_orig), qpu_ctbmv_handle,
+                                       qpu_ctbmv_bus);
+  memcpy(qpu_ctbmv, qpu_ctbmv_orig, sizeof(qpu_ctbmv_orig));
 }
 
 void qmkl6_context::finalize_blas2(void) {
+  free_memory(sizeof(qpu_ctbmv_orig), qpu_ctbmv_handle, qpu_ctbmv);
   free_memory(sizeof(qpu_stbmv_orig), qpu_stbmv_handle, qpu_stbmv);
   free_memory(sizeof(qpu_sgemv_t_orig), qpu_sgemv_t_handle, qpu_sgemv_t);
   free_memory(sizeof(qpu_sgemv_n_orig), qpu_sgemv_n_handle, qpu_sgemv_n);

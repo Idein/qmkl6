@@ -1,8 +1,10 @@
+#include <drm_v3d.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <cerrno>
 #include <cstdarg>
 #include <cstdint>
@@ -10,8 +12,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
-
-#include <drm_v3d.h>
 
 #include "cblas-qmkl6.h"
 #include "qmkl6-internal.hpp"
