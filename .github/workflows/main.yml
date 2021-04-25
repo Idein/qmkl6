@@ -45,14 +45,14 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends build-essential pkg-config cmake libblas-dev libopenblas-dev libatlas-base-dev libfftw3-dev
+          apt-get install -y --no-install-recommends build-essential clang pkg-config cmake libblas-dev libopenblas-dev libatlas-base-dev libfftw3-dev
           apt-get clean
           rm -rf /var/lib/apt/lists/*
       - name: Build tests
         run: |
           mkdir build/
           cd build/
-          cmake .. -DBUILD_TESTING=TRUE -DNO_QMKL6=TRUE
+          cmake .. -DCMAKE_CXX_COMPILER=clang++ -DBUILD_TESTING=TRUE -DNO_QMKL6=TRUE
           make
       - name: Run tests
         run: |
