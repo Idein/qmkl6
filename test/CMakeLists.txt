@@ -39,6 +39,7 @@ foreach (blas IN ITEMS qmkl6 netlib openblas atlas mkl)
 
         add_executable(${test}-${blas} ${test}.cpp)
         target_compile_definitions(${test}-${blas} PUBLIC CBLAS_${blas})
+        target_compile_options(${test}-${blas} PUBLIC ${${blas}_CFLAGS})
         target_link_libraries(${test}-${blas} ${${blas}_LINK_LIBRARIES})
         if (OpenMP_CXX_FOUND)
             target_link_libraries(${test}-${blas} OpenMP::OpenMP_CXX)
@@ -46,5 +47,25 @@ foreach (blas IN ITEMS qmkl6 netlib openblas atlas mkl)
         add_test(${test}-${blas} ${test}-${blas})
 
     endforeach()
+
+endforeach ()
+
+# libfftw3-dev
+pkg_check_modules(fftw3 fftw3f)
+
+foreach (fftw IN ITEMS qmkl6 fftw3 mkl)
+
+    if (NOT ${fftw}_FOUND)
+        continue()
+    endif ()
+
+    add_executable(fft-${fftw} fft.cpp)
+    target_compile_definitions(fft-${fftw} PUBLIC FFT_${fftw})
+    target_compile_options(fft-${fftw} PUBLIC ${${fftw}_CFLAGS})
+    target_link_libraries(fft-${fftw} ${${fftw}_LINK_LIBRARIES})
+    if (OpenMP_CXX_FOUND)
+        target_link_libraries(fft-${fftw} OpenMP::OpenMP_CXX)
+    endif ()
+    add_test(fft-${fftw} fft-${fftw})
 
 endforeach ()

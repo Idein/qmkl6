@@ -33,6 +33,7 @@ qmkl6_context::qmkl6_context(void) {
   init_blas2();
   init_blas3();
   init_blaslike();
+  init_fft();
 }
 
 qmkl6_context::~qmkl6_context(void) {
@@ -40,6 +41,7 @@ qmkl6_context::~qmkl6_context(void) {
 
   mkl_set_exit_handler(exit);
 
+  finalize_fft();
   finalize_blaslike();
   finalize_blas3();
   finalize_blas2();
