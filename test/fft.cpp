@@ -113,41 +113,42 @@ class fft_stockham : public fft_impl<T> {
 
  private:
   template <unsigned r>
-  inline void butterfly(const U x[r], U y[r]);
+  inline void butterfly(U x[r]);
 
   template <>
-  inline void butterfly<2>(const U x[2], U y[2]) {
-    y[0] = x[0] + x[1];
-    y[1] = x[0] - x[1];
+  inline void butterfly<2>(U x[2]) {
+    const U c0 = x[0], c1 = x[1];
+    x[0] = c0 + c1;
+    x[1] = c0 - c1;
   }
 
   template <>
-  inline void butterfly<4>(const U x[4], U y[4]) {
+  inline void butterfly<4>(U x[4]) {
     if constexpr (0) {
       /* DIF */
       const U c0 = x[0] + x[2], c1 = x[1] + x[3], c2 = x[0] - x[2],
               t = x[1] - x[3],
               c3 = is_forward ? U{t.imag(), -t.real()} : U{-t.imag(), t.real()};
       const U d0 = c0 + c1, d1 = c0 - c1, d2 = c2 + c3, d3 = c2 - c3;
-      y[0] = d0;
-      y[1] = d2;
-      y[2] = d1;
-      y[3] = d3;
+      x[0] = d0;
+      x[1] = d2;
+      x[2] = d1;
+      x[3] = d3;
     } else {
       /* DIT */
       const U c0 = x[0], c1 = x[2], c2 = x[1], c3 = x[3];
       const U d0 = c0 + c1, d1 = c0 - c1, d2 = c2 + c3, d3 = c2 - c3;
       const U t =
           is_forward ? U{d3.imag(), -d3.real()} : U{-d3.imag(), d3.real()};
-      y[0] = d0 + d2;
-      y[1] = d1 + t;
-      y[2] = d0 - d2;
-      y[3] = d1 - t;
+      x[0] = d0 + d2;
+      x[1] = d1 + t;
+      x[2] = d0 - d2;
+      x[3] = d1 - t;
     }
   }
 
   template <>
-  inline void butterfly<8>(const U x[8], U y[8]) {
+  inline void butterfly<8>(U x[8]) {
     const T s = std::sqrt(T(2)) / T(2);
     const U omega_8_1 = U{s, is_forward ? -s : s},
             omega_8_2 = U{T(0), is_forward ? T(-1) : T(1)},
@@ -160,14 +161,14 @@ class fft_stockham : public fft_impl<T> {
             d6 = c4 - c6, d7 = (c5 - c7) * omega_8_2;
     const U e0 = d0 + d1, e1 = d0 - d1, e2 = d2 + d3, e3 = d2 - d3,
             e4 = d4 + d5, e5 = d4 - d5, e6 = d6 + d7, e7 = d6 - d7;
-    y[0] = e0;
-    y[1] = e4;
-    y[2] = e2;
-    y[3] = e6;
-    y[4] = e1;
-    y[5] = e5;
-    y[6] = e3;
-    y[7] = e7;
+    x[0] = e0;
+    x[1] = e4;
+    x[2] = e2;
+    x[3] = e6;
+    x[4] = e1;
+    x[5] = e5;
+    x[6] = e3;
+    x[7] = e7;
   }
 
  public:
@@ -179,13 +180,13 @@ class fft_stockham : public fft_impl<T> {
         U omega[radix - 1];
         for (unsigned s = 1; s < radix; ++s) omega[s - 1] = *p++;
         for (unsigned m = 0; m < j; ++m) {
-          U x[radix], y[radix];
+          U x[radix];
           for (unsigned s = 0; s < radix; ++s)
             x[s] = X[n / radix * s + j * l + m];
-          butterfly<radix>(x, y);
-          Y[radix * j * l + m] = y[0];
+          butterfly<radix>(x);
+          Y[radix * j * l + m] = x[0];
           for (unsigned s = 1; s < radix; ++s)
-            Y[j * s + radix * j * l + m] = y[s] * omega[s - 1];
+            Y[j * s + radix * j * l + m] = x[s] * omega[s - 1];
         }
       }
       std::swap(X, Y);
