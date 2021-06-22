@@ -146,6 +146,30 @@ class fft_stockham : public fft_impl<T> {
     }
   }
 
+  template <>
+  inline void butterfly<8>(const U x[8], U y[8]) {
+    const T s = std::sqrt(T(2)) / T(2);
+    const U omega_8_1 = U{s, is_forward ? -s : s},
+            omega_8_2 = U{T(0), is_forward ? T(-1) : T(1)},
+            omega_8_3 = U{-s, is_forward ? -s : s};
+    const U c0 = x[0] + x[4], c1 = x[1] + x[5], c2 = x[2] + x[6],
+            c3 = x[3] + x[7], c4 = x[0] - x[4], c5 = (x[1] - x[5]) * omega_8_1,
+            c6 = (x[2] - x[6]) * omega_8_2, c7 = (x[3] - x[7]) * omega_8_3;
+    const U d0 = c0 + c2, d1 = c1 + c3, d2 = c0 - c2,
+            d3 = (c1 - c3) * omega_8_2, d4 = c4 + c6, d5 = c5 + c7,
+            d6 = c4 - c6, d7 = (c5 - c7) * omega_8_2;
+    const U e0 = d0 + d1, e1 = d0 - d1, e2 = d2 + d3, e3 = d2 - d3,
+            e4 = d4 + d5, e5 = d4 - d5, e6 = d6 + d7, e7 = d6 - d7;
+    y[0] = e0;
+    y[1] = e4;
+    y[2] = e2;
+    y[3] = e6;
+    y[4] = e1;
+    y[5] = e5;
+    y[6] = e3;
+    y[7] = e7;
+  }
+
  public:
   void execute(U *const out, const U *const in) {
     U *p = twiddle, *X = (U *)in, *Y = is_swapped ? out : temp;
@@ -347,12 +371,15 @@ static class fft_impl<T> *fft_auto(const enum fft_impl<T>::domain domain,
   const unsigned s = std::log2(n);
   assert(n == (unsigned)1 << s);
 
-  if (s % 2 == 0) {
-    if (s / 2 % 2 == 0 && n >= 1048576)
+  if (s >= 9 && s % 3 == 0) {
+    if (s >= 18 && s / 3 % 2 == 0)
+      return new fft_sixstep_block<T, fft_stockham<8, T>>(domain, direction, n);
+    return new fft_stockham<8, T>(domain, direction, n);
+  } else if (s % 2 == 0) {
+    if (s >= 20 && s / 2 % 2 == 0)
       return new fft_sixstep_block<T, fft_stockham<4, T>>(domain, direction, n);
-    else
-      return new fft_stockham<4, T>(domain, direction, n);
-  } else if (n <= 65536)
+    return new fft_stockham<4, T>(domain, direction, n);
+  } else if (s <= 16)
     return new fft_stockham<2, T>(domain, direction, n);
   else
     return new fft_sixstep_block<T, fft_stockham<2, T>>(domain, direction, n);
