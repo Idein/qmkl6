@@ -408,7 +408,7 @@ static int test_fft_c2c_single(const enum fft_impl<T>::domain domain,
       err_abs_min, err_abs_max, err_rel_min, err_rel_max, t0, t1, n / t0 * 1e-6,
       n / t1 * 1e-6);
 
-  if (err_rel_max > 1e-3f) {
+  if (err_rel_max > n * 1e-6f) {
     std::cerr << "error: Relative error is too large" << std::endl;
     return 1;
   }
