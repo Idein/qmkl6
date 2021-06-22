@@ -20,8 +20,16 @@ static const uint64_t qpu_fft4_back_orig[] = {
 #include "fft4_back.qhex6"
 };
 
+static const uint64_t qpu_fft8_forw_orig[] = {
+#include "fft8_forw.qhex6"
+};
+
+static const uint64_t qpu_fft8_back_orig[] = {
+#include "fft8_back.qhex6"
+};
+
 struct fftwf_plan_s {
-  int n, log2n;
+  int n, log2n, radix;
   bool is_swapped;
   int sign;
   unsigned flags;
@@ -45,34 +53,26 @@ fftwf_complex *fftwf_alloc_complex(const size_t n) {
 
 void fftwf_free(void *const p) { mkl_free(p); }
 
-static void prepare_twiddle_radix2(std::complex<float> *const twiddle,
-                                   const int n, const int sign) {
-  const float c = (float)sign * std::acos(-1.f);
-  std::complex<float> *p = twiddle;
-  for (unsigned k = n / 2; k > 0; k /= 2)
-    for (unsigned l = 0; l < k; ++l) *p++ = std::polar(1.f, c * l / k);
-  assert(p == twiddle + n - 1);
-}
-
-static void prepare_twiddle_radix4(void *const twiddle, const int n,
-                                   const int sign) {
-  const float c = (float)sign * std::acos(-1.f) / 2;
+static void prepare_twiddle(void *const twiddle, const int n, const int radix,
+                            const int sign) {
+  const float c = (float)sign * std::acos(-1.f) / (radix / 2);
   float *p = (float *)twiddle;
-  for (unsigned k = n / 4; k > 0; k /= 4) {
-    for (unsigned l = 0; l < k; ++l) {
-      const std::complex<float> omega1 = std::polar(1.f, c * l / k),
-                                omega2 = std::polar(1.f, c * l * 2 / k),
-                                omega3 = std::polar(1.f, c * l * 3 / k);
-      *p++ = omega1.real();
-      *p++ = omega1.imag();
-      *p++ = omega2.real();
-      *p++ = omega2.imag();
-      *p++ = omega3.real();
-      *p++ = omega3.imag();
-      *p++ = qmkl6.bit_cast<float>(int32_t(sizeof(float) * -7));
+  for (int k = n / radix; k > 0; k /= radix) {
+    for (int l = 0; l < k; ++l) {
+      for (int m = 1; m < radix; ++m) {
+        const std::complex<float> omega = std::polar(1.f, c * l * m / k);
+        *p++ = omega.real();
+        *p++ = omega.imag();
+      }
+      if (radix >= 4)
+        *p++ = qmkl6.bit_cast<float>(
+            -int32_t(sizeof(float) * (2 * (radix - 1) + 1)));
     }
   }
-  assert(p == (float *)twiddle + (n - 1) / 3 * 7);
+  if (radix >= 4)
+    assert(p == (float *)twiddle + (n - 1) / (radix - 1) * (2 * radix - 1));
+  else
+    assert(p == (float *)twiddle + (n - 1) * 2);
 }
 
 fftwf_plan fftwf_plan_dft_1d(const int n, fftwf_complex *in, fftwf_complex *out,
@@ -104,28 +104,38 @@ fftwf_plan fftwf_plan_dft_1d(const int n, fftwf_complex *in, fftwf_complex *out,
   plan->temp = (std::complex<float> *)qmkl6.alloc_memory(
       sizeof(*plan->temp) * n, plan->temp_handle, plan->temp_bus);
 
-  if (plan->log2n % 2 == 0 && n >= 16) {
+  if (plan->log2n % 3 == 0 && n >= 64) {
+    plan->radix = 8;
+    plan->is_swapped = plan->log2n / 3 % 2;
+    plan->code_bus = sign == FFTW_FORWARD ? qmkl6.qpu_fft8_forw_bus
+                                          : qmkl6.qpu_fft8_back_bus;
+    plan->twiddle_size = sizeof(float) * ((n - 1) / 7 * 15);
+  } else if (plan->log2n % 2 == 0 && n >= 16) {
+    plan->radix = 4;
+    plan->is_swapped = plan->log2n / 2 % 2;
     plan->code_bus = sign == FFTW_FORWARD ? qmkl6.qpu_fft4_forw_bus
                                           : qmkl6.qpu_fft4_back_bus;
     plan->twiddle_size = sizeof(float) * ((n - 1) / 3 * 7);
-    plan->twiddle = (std::complex<float> *)qmkl6.alloc_memory(
-        plan->twiddle_size, plan->twiddle_handle, plan->twiddle_bus);
-    prepare_twiddle_radix4(plan->twiddle, n, sign);
-    plan->is_swapped = plan->log2n / 2 % 2;
   } else {
+    plan->radix = 2;
+    plan->is_swapped = plan->log2n % 2;
     plan->code_bus = qmkl6.qpu_fft2_bus;
     plan->twiddle_size = sizeof(plan->twiddle[0]) * (n - 1);
-    plan->twiddle = (std::complex<float> *)qmkl6.alloc_memory(
-        plan->twiddle_size, plan->twiddle_handle, plan->twiddle_bus);
-    prepare_twiddle_radix2(plan->twiddle, n, sign);
-    plan->is_swapped = plan->log2n % 2;
   }
+
+  plan->twiddle = (std::complex<float> *)qmkl6.alloc_memory(
+      plan->twiddle_size, plan->twiddle_handle, plan->twiddle_bus);
+  prepare_twiddle(plan->twiddle, n, plan->radix, sign);
 
   plan->unif = (uint32_t *)qmkl6.alloc_memory(
       sizeof(*plan->unif) * 16, plan->unif_handle, plan->unif_bus);
   plan->unif[0] = n;
   /* unif[1..3] are set on execution. */
-  plan->unif[4] = plan->twiddle_bus;
+  if (plan->radix == 8) {
+    plan->unif[4] = qmkl6.bit_cast<uint32_t>(-std::sqrt(2.f) / 2);
+    plan->unif[5] = plan->twiddle_bus;
+  } else
+    plan->unif[4] = plan->twiddle_bus;
 
   return plan;
 }
@@ -180,12 +190,20 @@ void qmkl6_context::init_fft(void) {
       sizeof(qpu_fft4_forw_orig), qpu_fft4_forw_handle, qpu_fft4_forw_bus);
   qpu_fft4_back = (uint64_t *)alloc_memory(
       sizeof(qpu_fft4_back_orig), qpu_fft4_back_handle, qpu_fft4_back_bus);
+  qpu_fft8_forw = (uint64_t *)alloc_memory(
+      sizeof(qpu_fft8_forw_orig), qpu_fft8_forw_handle, qpu_fft8_forw_bus);
+  qpu_fft8_back = (uint64_t *)alloc_memory(
+      sizeof(qpu_fft8_back_orig), qpu_fft8_back_handle, qpu_fft8_back_bus);
   memcpy(qpu_fft2, qpu_fft2_orig, sizeof(qpu_fft2_orig));
   memcpy(qpu_fft4_forw, qpu_fft4_forw_orig, sizeof(qpu_fft4_forw_orig));
   memcpy(qpu_fft4_back, qpu_fft4_back_orig, sizeof(qpu_fft4_back_orig));
+  memcpy(qpu_fft8_forw, qpu_fft8_forw_orig, sizeof(qpu_fft8_forw_orig));
+  memcpy(qpu_fft8_back, qpu_fft8_back_orig, sizeof(qpu_fft8_back_orig));
 }
 
 void qmkl6_context::finalize_fft(void) {
+  free_memory(sizeof(qpu_fft8_back_orig), qpu_fft8_back_handle, qpu_fft8_back);
+  free_memory(sizeof(qpu_fft8_forw_orig), qpu_fft8_forw_handle, qpu_fft8_forw);
   free_memory(sizeof(qpu_fft4_back_orig), qpu_fft4_back_handle, qpu_fft4_back);
   free_memory(sizeof(qpu_fft4_forw_orig), qpu_fft4_forw_handle, qpu_fft4_forw);
   free_memory(sizeof(qpu_fft2_orig), qpu_fft2_handle, qpu_fft2);

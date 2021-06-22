@@ -71,11 +71,15 @@ set_property(SOURCE blaslike.cpp APPEND PROPERTY
 generate_qhex6_from_py(fft2 fft2.py 8 0)
 generate_qhex6_from_py(fft4_forw fft4.py 8 1)
 generate_qhex6_from_py(fft4_back fft4.py 8 0)
+generate_qhex6_from_py(fft8_forw fft8.py 8 1)
+generate_qhex6_from_py(fft8_back fft8.py 8 0)
 
 set_property(SOURCE fft.cpp APPEND PROPERTY
         OBJECT_DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/fft2.qhex6
                        ${CMAKE_CURRENT_BINARY_DIR}/fft4_forw.qhex6
-                       ${CMAKE_CURRENT_BINARY_DIR}/fft4_back.qhex6)
+                       ${CMAKE_CURRENT_BINARY_DIR}/fft4_back.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/fft8_forw.qhex6
+                       ${CMAKE_CURRENT_BINARY_DIR}/fft8_back.qhex6)
 
 add_library(qmkl6 SHARED qmkl6.cpp support.cpp blas1.cpp blas2.cpp blas3.cpp
                          blaslike.cpp fft.cpp)

@@ -30,21 +30,23 @@ class qmkl6_context {
       qpu_sgemm_rtt_handle, qpu_somatcopy_n_handle, qpu_somatcopy_t_4x4_handle,
       qpu_somatcopy_t_256x32_handle, qpu_comatcopy_n_handle,
       qpu_comatcopy_t_4x4_handle, qpu_comatcopy_t_128x32_handle,
-      qpu_fft2_handle, qpu_fft4_forw_handle, qpu_fft4_back_handle;
+      qpu_fft2_handle, qpu_fft4_forw_handle, qpu_fft4_back_handle,
+      qpu_fft8_forw_handle, qpu_fft8_back_handle;
   uint32_t unif_bus, qpu_sasum_bus, qpu_saxpy_bus, qpu_scopy_bus, qpu_sdot_bus,
       qpu_snrm2_bus, qpu_sscal_bus, qpu_sgemv_n_bus, qpu_sgemv_t_bus,
       qpu_stbmv_bus, qpu_ctbmv_bus, qpu_sgemm_rnn_bus, qpu_sgemm_rnt_bus,
       qpu_sgemm_rtn_bus, qpu_sgemm_rtt_bus, qpu_somatcopy_n_bus,
       qpu_somatcopy_t_4x4_bus, qpu_somatcopy_t_256x32_bus, qpu_comatcopy_n_bus,
       qpu_comatcopy_t_4x4_bus, qpu_comatcopy_t_128x32_bus, qpu_fft2_bus,
-      qpu_fft4_forw_bus, qpu_fft4_back_bus;
+      qpu_fft4_forw_bus, qpu_fft4_back_bus, qpu_fft8_forw_bus,
+      qpu_fft8_back_bus;
   uint32_t *unif;
   uint64_t *qpu_saxpy, *qpu_sasum, *qpu_scopy, *qpu_sdot, *qpu_snrm2,
       *qpu_sscal, *qpu_sgemv_n, *qpu_sgemv_t, *qpu_stbmv, *qpu_ctbmv,
       *qpu_sgemm_rnn, *qpu_sgemm_rnt, *qpu_sgemm_rtn, *qpu_sgemm_rtt,
       *qpu_somatcopy_n, *qpu_somatcopy_t_4x4, *qpu_somatcopy_t_256x32,
       *qpu_comatcopy_n, *qpu_comatcopy_t_4x4, *qpu_comatcopy_t_128x32,
-      *qpu_fft2, *qpu_fft4_forw, *qpu_fft4_back;
+      *qpu_fft2, *qpu_fft4_forw, *qpu_fft4_back, *qpu_fft8_forw, *qpu_fft8_back;
 
   uint64_t timeout_ns = UINT64_C(10'000'000'000);
 
