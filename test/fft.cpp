@@ -173,9 +173,22 @@ class fft_stockham : public fft_impl<T> {
 
  public:
   void execute(U *const out, const U *const in) {
-    U *p = twiddle, *X = (U *)in, *Y = is_swapped ? out : temp;
+    U *p = twiddle, *Y = is_swapped ? out : temp;
 
-    for (unsigned j = 1, k = n / radix; k > 0; j *= radix, k /= radix) {
+    /* The case of j = 1, k = n / radix, m = 0. */
+    for (unsigned l = 0; l < n / radix; ++l) {
+      U x[radix];
+      for (unsigned s = 0; s < radix; ++s) x[s] = in[n / radix * s + l];
+      butterfly<radix>(x);
+      Y[radix * l] = x[0];
+      for (unsigned s = 1; s < radix; ++s) Y[radix * l + s] = x[s] * *p++;
+    }
+
+    U *X = Y;
+    Y = is_swapped ? temp : out;
+
+    for (unsigned j = radix, k = n / radix / radix; k > 0;
+         j *= radix, k /= radix) {
       for (unsigned l = 0; l < k; ++l) {
         U omega[radix - 1];
         for (unsigned s = 1; s < radix; ++s) omega[s - 1] = *p++;
@@ -190,7 +203,6 @@ class fft_stockham : public fft_impl<T> {
         }
       }
       std::swap(X, Y);
-      if (j == 1) Y = is_swapped ? temp : out;
     }
   }
 };
