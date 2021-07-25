@@ -53,26 +53,63 @@ fftwf_complex *fftwf_alloc_complex(const size_t n) {
 
 void fftwf_free(void *const p) { mkl_free(p); }
 
-static void prepare_twiddle(void *const twiddle, const int n, const int radix,
-                            const int sign) {
+static void append_omega(float **p, const float c, const int k, const int l,
+                         const int m) {
+  const std::complex<float> omega = std::polar(1.f, c * l * m / k);
+  (*p)[0] = omega.real();
+  (*p)[1] = omega.imag();
+  *p += 2;
+}
+
+static void prepare_twiddle_2_or_4(void *const twiddle, const int n,
+                                   const int radix, const int sign) {
+  assert(radix == 2 || radix == 4);
+
   const float c = (float)sign * std::acos(-1.f) / (radix / 2);
   float *p = (float *)twiddle;
   for (int k = n / radix; k > 0; k /= radix) {
     for (int l = 0; l < k; ++l) {
-      for (int m = 1; m < radix; ++m) {
-        const std::complex<float> omega = std::polar(1.f, c * l * m / k);
-        *p++ = omega.real();
-        *p++ = omega.imag();
-      }
+      for (int m = 1; m < radix; ++m) append_omega(&p, c, k, l, m);
       if (radix >= 4)
         *p++ = qmkl6.bit_cast<float>(
             -int32_t(sizeof(float) * (2 * (radix - 1) + 1)));
     }
   }
+
   if (radix >= 4)
-    assert(p == (float *)twiddle + (n - 1) / (radix - 1) * (2 * radix - 1));
+    assert(p ==
+           (float *)twiddle + (n - 1) / (radix - 1) * (2 * (radix - 1) + 1));
   else
     assert(p == (float *)twiddle + (n - 1) * 2);
+}
+
+static void prepare_twiddle_8(void *const twiddle, const int n, const int radix,
+                              const int sign) {
+  assert(radix == 8);
+
+  const float c = (float)sign * std::acos(-1.f) / (radix / 2),
+              tmuc = qmkl6.bit_cast<float>(uint32_t(0xfafafafa));
+  float *p = (float *)twiddle;
+  for (int k = n / radix; k > 0; k /= radix) {
+    for (int l = 0; l < k; ++l) {
+      *p++ = tmuc;
+      *p++ = tmuc;
+      *p++ = tmuc;
+      append_omega(&p, c, k, l, 1);
+      append_omega(&p, c, k, l, 2);
+      append_omega(&p, c, k, l, 3);
+      append_omega(&p, c, k, l, 4);
+      *p++ = tmuc;
+      append_omega(&p, c, k, l, 5);
+      append_omega(&p, c, k, l, 6);
+      append_omega(&p, c, k, l, 7);
+      *p++ = qmkl6.bit_cast<float>(
+          -int32_t(sizeof(float) * (2 * (radix - 1) + 4 + 1)));
+    }
+  }
+
+  assert(p ==
+         (float *)twiddle + (n - 1) / (radix - 1) * (2 * (radix - 1) + 4 + 1));
 }
 
 fftwf_plan fftwf_plan_dft_1d(const int n, fftwf_complex *in, fftwf_complex *out,
@@ -109,7 +146,7 @@ fftwf_plan fftwf_plan_dft_1d(const int n, fftwf_complex *in, fftwf_complex *out,
     plan->is_swapped = plan->log2n / 3 % 2;
     plan->code_bus = sign == FFTW_FORWARD ? qmkl6.qpu_fft8_forw_bus
                                           : qmkl6.qpu_fft8_back_bus;
-    plan->twiddle_size = sizeof(float) * ((n - 1) / 7 * 15);
+    plan->twiddle_size = sizeof(float) * ((n - 1) / 7 * 19);
   } else if (plan->log2n % 2 == 0 && n >= 16) {
     plan->radix = 4;
     plan->is_swapped = plan->log2n / 2 % 2;
@@ -125,7 +162,10 @@ fftwf_plan fftwf_plan_dft_1d(const int n, fftwf_complex *in, fftwf_complex *out,
 
   plan->twiddle = (std::complex<float> *)qmkl6.alloc_memory(
       plan->twiddle_size, plan->twiddle_handle, plan->twiddle_bus);
-  prepare_twiddle(plan->twiddle, n, plan->radix, sign);
+  if (plan->radix == 2 || plan->radix == 4)
+    prepare_twiddle_2_or_4(plan->twiddle, n, plan->radix, sign);
+  else
+    prepare_twiddle_8(plan->twiddle, n, plan->radix, sign);
 
   plan->unif = (uint32_t *)qmkl6.alloc_memory(
       sizeof(*plan->unif) * 16, plan->unif_handle, plan->unif_bus);

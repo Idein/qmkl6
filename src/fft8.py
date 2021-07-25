@@ -10,9 +10,9 @@ from common import ilog2
 def qpu_fft8(asm, *, num_qpus, is_forward):
 
     g = globals()
-    for i, name in enumerate(['j', 'k', 'l', 'm', 'n', '4n', 'x_orig', 'x',
-                              'y_orig', 'y', 'buf', 'invsqrt2_neg', 'omega_r',
-                              'omega_c']):
+    for i, name in enumerate(['j', '2j', '3j', '4j', '5j', '6j', '7j', 'k', 'l',
+                              'm', 'n', '4n', 'x_orig', 'x', 'y_orig', 'y',
+                              'buf', 'invsqrt2_neg', 'omega_r', 'omega_c']):
         g[f'reg_{name}'] = rf[i]
 
     base = 48
@@ -68,61 +68,59 @@ def qpu_fft8(asm, *, num_qpus, is_forward):
             shl(r2, r2, ilog2(8)).add(reg_x, reg_x_orig, r1)
             shl(reg_j, r3, ilog2(8)).add(reg_y, reg_y_orig, r2)
 
+            add(reg_2j, reg_j, reg_j).umul24(reg_7j, reg_j, 7)
+            add(reg_3j, reg_j, reg_2j).add(reg_4j, reg_2j, reg_2j)
+            add(reg_5j, reg_2j, reg_3j).add(reg_6j, reg_3j, reg_3j)
+
             with loop as lm:
 
                 # x + 8 * (n / radix * s) = x + n * s, s = 0, 1, ..., 7
                 # r3 = x + n * s
                 # r4 = x + n * s + n * 4
-                mov(tmua, reg_x).mov(r2, 4)
-                add(tmua, reg_x, reg_4n).mov(r3, reg_x)
-                add(tmua, r3, r2).add(r4, reg_x, reg_4n)
-                add(tmua, r4, 4).add(r3, r3, reg_n)
-                mov(tmua, r3).add(r4, r4, reg_n)
-                mov(tmua, r4).mov(broadcast, reg_invsqrt2_neg)
-                add(tmua, r3, 4).add(r3, r3, reg_n)
-                add(tmua, r4, 4).add(r4, r4, reg_n)
-                mov(tmua, r3, sig=ldtmu(reg_c0r))
-                mov(tmua, r4, sig=ldtmu(reg_c4r))
+
+                mov(tmuau, reg_x).add(r3, reg_x, reg_n)
+                add(tmua, reg_x, reg_4n).add(r4, r3, reg_4n)
+                mov(tmua, r3).add(r3, r3, reg_n)
+                mov(tmua, r4).add(r4, r4, reg_n)
+                mov(tmuau, r3).add(r3, r3, reg_n)
+                nop(sig=ldtmu(reg_c0r))
+                mov(tmua, r4).add(r4, r4, reg_n, sig=ldtmu(reg_c0c))
+                nop(sig=ldtmu(reg_c4r))
+                mov(tmua, r3) \
+                    .mov(broadcast, reg_invsqrt2_neg, sig=ldtmu(reg_c4c))
 
                 # (c0, c1, ..., c7) = butt8(x0, x1, ..., x7)
 
-                fadd(r0, reg_c0r, reg_c4r) \
-                    .add(tmua, r3, r2, sig=ldtmu(reg_c0c))
+                fadd(r0, reg_c0r, reg_c4r, sig=ldtmu(reg_c1r))
                 fsub(reg_c4r, reg_c0r, reg_c4r) \
-                    .add(tmua, r4, r2, sig=ldtmu(reg_c4c))
+                    .mov(tmua, r4, sig=ldtmu(reg_c1c))
                 fadd(r0, reg_c0c, reg_c4c).mov(reg_c0r, r0)
-                fsub(reg_c4c, reg_c0c, reg_c4c).mov(reg_c0c, r0)
-                add(r3, r3, reg_n).add(r4, r4, reg_n)
+                fsub(reg_c4c, reg_c0c, reg_c4c) \
+                    .mov(reg_c0c, r0, sig=ldtmu(reg_c5r))
 
-                mov(tmua, r3, sig=ldtmu(reg_c1r)).mov(r1, reg_n)
-                mov(tmua, r4, sig=ldtmu(reg_c5r))
-                fadd(r0, reg_c1r, reg_c5r) \
-                    .add(tmua, r3, r2, sig=ldtmu(reg_c1c))
-                fsub(reg_c5r, reg_c1r, reg_c5r) \
-                    .add(tmua, r4, r2, sig=ldtmu(reg_c5c))
+                fadd(r0, reg_c1r, reg_c5r)
+                fsub(reg_c5r, reg_c1r, reg_c5r, sig=ldtmu(reg_c5c))
                 fadd(r0, reg_c1c, reg_c5c).mov(reg_c1r, r0)
                 fsub(reg_c5c, reg_c1c, reg_c5c).mov(reg_c1c, r0)
                 if is_forward:
-                    fadd(r0, reg_c5r, reg_c5c).add(r3, r3, r1)
+                    fadd(r0, reg_c5r, reg_c5c, sig=ldtmu(reg_c2r))
                     fsub(r1, reg_c5c, reg_c5r) \
-                        .fmul(reg_c5r, r0, r5.unpack('abs'), sig=ldtmu(reg_c2r))
-                    add(r4, r4, reg_n) \
-                        .fmul(reg_c5c, r1, r5.unpack('abs'), sig=ldtmu(reg_c6r))
+                        .fmul(reg_c5r, r0, r5.unpack('abs'), sig=ldtmu(reg_c2c))
+                    fmul(reg_c5c, r1, r5.unpack('abs'), sig=ldtmu(reg_c6r))
                 else:
-                    fsub(r0, reg_c5r, reg_c5c).add(r3, r3, r1)
+                    fsub(r0, reg_c5r, reg_c5c, sig=ldtmu(reg_c2r))
                     fadd(r1, reg_c5r, reg_c5c) \
-                        .fmul(reg_c5r, r0, r5.unpack('abs'), sig=ldtmu(reg_c2r))
-                    add(r4, r4, reg_n) \
-                        .fmul(reg_c5c, r1, r5.unpack('abs'), sig=ldtmu(reg_c6r))
+                        .fmul(reg_c5r, r0, r5.unpack('abs'), sig=ldtmu(reg_c2c))
+                    fmul(reg_c5c, r1, r5.unpack('abs'), sig=ldtmu(reg_c6r))
 
-                fadd(r0, reg_c2r, reg_c6r, sig=ldtmu(reg_c2c))
+                fadd(r0, reg_c2r, reg_c6r, sig=ldtmu(reg_c6c))
                 if is_forward:
                     fsub(r1, reg_c6r, reg_c2r) \
-                        .mov(reg_c2r, r0, sig=ldtmu(reg_c6c))
+                        .mov(reg_c2r, r0, sig=ldtmu(reg_c3r))
                 else:
                     fsub(r1, reg_c2r, reg_c6r) \
-                        .mov(reg_c2r, r0, sig=ldtmu(reg_c6c))
-                fadd(r0, reg_c2c, reg_c6c, sig=ldtmu(reg_c3r))
+                        .mov(reg_c2r, r0, sig=ldtmu(reg_c3r))
+                fadd(r0, reg_c2c, reg_c6c, sig=ldtmu(reg_c3c))
                 if is_forward:
                     fsub(reg_c6r, reg_c2c, reg_c6c) \
                         .mov(reg_c2c, r0, sig=ldtmu(reg_c7r))
@@ -130,7 +128,7 @@ def qpu_fft8(asm, *, num_qpus, is_forward):
                     fsub(reg_c6r, reg_c6c, reg_c2c) \
                         .mov(reg_c2c, r0, sig=ldtmu(reg_c7r))
 
-                fadd(r0, reg_c3r, reg_c7r).mov(reg_c6c, r1, sig=ldtmu(reg_c3c))
+                fadd(r0, reg_c3r, reg_c7r).mov(reg_c6c, r1)
                 fsub(reg_c7r, reg_c3r, reg_c7r) \
                     .mov(reg_c3r, r0, sig=ldtmu(reg_c7c))
                 fadd(r0, reg_c3c, reg_c7c)
@@ -178,8 +176,8 @@ def qpu_fft8(asm, *, num_qpus, is_forward):
 
                 # eidx < 16 - (m + 1) ∴ m + eidx - 15 < 0
                 # r5 = -1 - (rest - 1) = -rest
-                eidx(r0).add(r1, reg_m, -15)
-                add(null, r0, r1, cond='pushn').sub(r5, -1, reg_m)
+                eidx(r0).add(r2, reg_m, -15)
+                add(null, r0, r2, cond='pushn').sub(r5, -1, reg_m)
                 add(reg_m, reg_m, -16, cond='pushn').mov(reg_c7c, r4)
                 mov(reg_y, r3, cond='ifb').rotate(reg_y, r3, r5, cond='ifnb')
 
@@ -189,91 +187,84 @@ def qpu_fft8(asm, *, num_qpus, is_forward):
                 # (e6, e7) = butt2(d6, d7)
 
                 fadd(r0, reg_c0r, reg_c1r)
-                mov(r1, reg_y).rotate(tmud, r0, r5)
-                fadd(r0, reg_c0c, reg_c1c).mov(tmua, r1)
-                add(reg_y, r1, reg_j).rotate(tmud, r0, r5)
-                add(tmua, r1, r2).mov(r0, reg_c5c, sig=ldunifrf(r4))
+                rotate(tmud, r0, r5)
+                fadd(r0, reg_c0c, reg_c1c)
+                rotate(tmud, r0, r5)
+                mov(tmuau, reg_y)
+                nop(sig=ldunifrf(r4))
 
                 fadd(r2, reg_c4r, reg_c5r, sig=ldunifrf(reg_omega_c))
-                fadd(r3, reg_c4c, r0).fmul(r0, r2, r4, sig=rot(r5))
+                fadd(r3, reg_c4c, r1).fmul(r0, r2, r4, sig=rot(r5))
                 fmul(r1, r3, reg_omega_c, sig=rot(r5))
                 fsub(tmud, r0, r1).fmul(r0, r2, reg_omega_c, sig=rot(r5))
-                mov(tmua, reg_y).fmul(r1, r3, r4, sig=rot(r5))
-                fadd(tmud, r0, r1).mov(r0, 4)
-                add(tmua, reg_y, r0).add(reg_y, reg_y, reg_j)
+                fmul(r1, r3, r4, sig=rot(r5))
+                fadd(tmud, r0, r1).mov(r0, reg_c3c)
+                add(tmua, reg_y, reg_j, sig=ldunifrf(r4))
 
-                mov(r0, reg_c3c, sig=ldunifrf(r4))
                 fadd(r2, reg_c2r, reg_c3r, sig=ldunifrf(reg_omega_c))
                 fadd(r3, reg_c2c, r0).fmul(r0, r2, r4, sig=rot(r5))
                 fmul(r1, r3, reg_omega_c, sig=rot(r5))
                 fsub(tmud, r0, r1).fmul(r0, r2, reg_omega_c, sig=rot(r5))
-                mov(tmua, reg_y).fmul(r1, r3, r4, sig=rot(r5))
-                fadd(tmud, r0, r1).mov(r0, 4)
-                add(tmua, reg_y, r0).add(reg_y, reg_y, reg_j)
+                fmul(r1, r3, r4, sig=rot(r5))
+                fadd(tmud, r0, r1).mov(r0, reg_c7c)
+                add(tmua, reg_y, reg_2j, sig=ldunifrf(r4))
 
-                mov(r0, reg_c7c, sig=ldunifrf(r4))
                 fadd(r2, reg_c6r, reg_c7r, sig=ldunifrf(reg_omega_c))
                 fadd(r3, reg_c6c, r0).fmul(r0, r2, r4, sig=rot(r5))
                 fmul(r1, r3, reg_omega_c, sig=rot(r5))
                 fsub(tmud, r0, r1).fmul(r0, r2, reg_omega_c, sig=rot(r5))
-                mov(tmua, reg_y).fmul(r1, r3, r4, sig=rot(r5))
-                fadd(tmud, r0, r1).mov(r0, 4)
-                add(tmua, reg_y, r0).add(reg_y, reg_y, reg_j)
+                fmul(r1, r3, r4, sig=rot(r5))
+                fadd(tmud, r0, r1).mov(r0, reg_c1c)
+                add(tmua, reg_y, reg_3j, sig=ldunifrf(r4))
 
-                mov(r0, reg_c1c, sig=ldunifrf(r4))
                 fsub(r2, reg_c0r, reg_c1r, sig=ldunifrf(reg_omega_c))
                 fsub(r3, reg_c0c, r0).fmul(r0, r2, r4, sig=rot(r5))
                 fmul(r1, r3, reg_omega_c, sig=rot(r5))
                 fsub(tmud, r0, r1).fmul(r0, r2, reg_omega_c, sig=rot(r5))
-                mov(tmua, reg_y).fmul(r1, r3, r4, sig=rot(r5))
-                fadd(tmud, r0, r1).mov(r0, 4)
-                add(tmua, reg_y, r0).add(reg_y, reg_y, reg_j)
+                fmul(r1, r3, r4, sig=rot(r5))
+                fadd(tmud, r0, r1).mov(r0, reg_c5c)
+                add(tmuau, reg_y, reg_4j)
+                nop(sig=ldunifrf(r4))
 
-                mov(r0, reg_c5c, sig=ldunifrf(r4))
                 fsub(r2, reg_c4r, reg_c5r, sig=ldunifrf(reg_omega_c))
                 fsub(r3, reg_c4c, r0).fmul(r0, r2, r4, sig=rot(r5))
                 fmul(r1, r3, reg_omega_c, sig=rot(r5))
                 fsub(tmud, r0, r1).fmul(r0, r2, reg_omega_c, sig=rot(r5))
-                mov(tmua, reg_y).fmul(r1, r3, r4, sig=rot(r5))
-                fadd(tmud, r0, r1).mov(r0, 4)
-                add(tmua, reg_y, r0).add(reg_y, reg_y, reg_j)
+                fmul(r1, r3, r4, sig=rot(r5))
+                fadd(tmud, r0, r1).mov(r0, reg_c3c)
+                add(tmua, reg_y, reg_5j, sig=ldunifrf(r4))
 
-                mov(r0, reg_c3c, sig=ldunifrf(r4))
                 fsub(r2, reg_c2r, reg_c3r, sig=ldunifrf(reg_omega_c))
                 fsub(r3, reg_c2c, r0).fmul(r0, r2, r4, sig=rot(r5))
                 fmul(r1, r3, reg_omega_c, sig=rot(r5))
                 fsub(tmud, r0, r1).fmul(r0, r2, reg_omega_c, sig=rot(r5))
-                mov(tmua, reg_y).fmul(r1, r3, r4, sig=rot(r5))
-                fadd(tmud, r0, r1).mov(r0, 4)
-                add(tmua, reg_y, r0).add(reg_y, reg_y, reg_j)
+                fmul(r1, r3, r4, sig=rot(r5))
+                fadd(tmud, r0, r1).mov(r0, reg_c7c)
+                add(tmua, reg_y, reg_6j, sig=ldunifrf(r4))
 
-                mov(r0, reg_c7c, sig=ldunifrf(r4))
                 fsub(r2, reg_c6r, reg_c7r, sig=ldunifrf(reg_omega_c))
                 fsub(r3, reg_c6c, r0).fmul(r0, r2, r4, sig=rot(r5))
                 fmul(r1, r3, reg_omega_c, sig=rot(r5))
                 fsub(tmud, r0, r1).fmul(r0, r2, reg_omega_c, sig=rot(r5))
-                mov(tmua, reg_y).fmul(r1, r3, r4, sig=rot(r5))
+                fmul(r1, r3, r4, sig=rot(r5))
                 fadd(tmud, r0, r1).mov(r0, 7)
 
                 lm.b(cond='na0').unif_addr(absolute=False)
                 # 7 = ilog2(8 * 16)
-                shl(r0, 1, r0).umul24(r1, reg_j, r0)
-                add(tmua, reg_y, 4).sub(reg_y, reg_y, r1)
-                add(reg_x, reg_x, r0).add(reg_y, reg_y, r0)
+                shl(r0, 1, r0).add(r1, reg_l, 1)
+                add(reg_x, reg_x, r0).sub(null, r1, reg_k, cond='pushn')
+                add(tmua, reg_y, reg_7j).add(reg_y, reg_y, r0)
 
-            add(reg_l, reg_l, 1)
-            sub(null, reg_l, reg_k, cond='pushn')
             ll.b(cond='a0')
             # Restore the original reg_j value.
-            shr(reg_j, reg_j, ilog2(8))
-            nop()
-            nop()
+            shr(reg_j, reg_j, ilog2(8)).mov(reg_l, r1)
+            sub(null, reg_j, 2, cond='pushn')
+            shr(r0, reg_k, ilog2(8), cond='pushz')
 
-        shr(reg_k, reg_k, ilog2(8), cond='pushz').mov(r5, ilog2(8))
         ljk.b(cond='na0')
-        shl(reg_j, reg_j, r5).sub(null, reg_j, 2, cond='pushn')
-        mov(reg_y_orig, reg_buf, cond='ifa').mov(r0, reg_y_orig)
-        mov(reg_y_orig, reg_x_orig, cond='ifna').mov(reg_x_orig, r0)
+        shl(reg_j, reg_j, ilog2(8)).mov(reg_k, r0)
+        mov(reg_y_orig, reg_buf, cond='ifb').mov(r0, reg_y_orig)
+        mov(reg_y_orig, reg_x_orig, cond='ifnb').mov(reg_x_orig, r0)
 
     L.exit
 
@@ -344,7 +335,7 @@ def benchmark():
             src = drv.alloc(n, dtype='csingle')
             dst = drv.alloc(n, dtype='csingle')
             tmp = drv.alloc(n, dtype='csingle')
-            twiddle = drv.alloc((n - 1) // 7 * 15, dtype='float32')
+            twiddle = drv.alloc((n - 1) // 7 * 19, dtype='float32')
 
             rng = default_rng(0xdeadbeef)
             src[:] = rng.random(n, 'float32') + rng.random(n, 'float32') * 1j
@@ -356,11 +347,23 @@ def benchmark():
             for ilog8k in range(ilog8n - 1, -1, -1):
                 k = pow(8, ilog8k)
                 for l in range(k):
-                    for m in range(1, 8):
+                    twiddle[j] = unpack('f', pack('I', 0xfafafafa))[0]
+                    j += 1
+                    twiddle[j] = unpack('f', pack('I', 0xfafafafa))[0]
+                    j += 1
+                    twiddle[j] = unpack('f', pack('I', 0xfafafafa))[0]
+                    j += 1
+                    for m in range(1, 5):
                         omega = rect(1, c * l * m / k)
                         twiddle[j], twiddle[j + 1] = omega.real, omega.imag
                         j += 2
-                    twiddle[j] = unpack('f', pack('i', 4 * -15))[0]
+                    twiddle[j] = unpack('f', pack('I', 0xfafafafa))[0]
+                    j += 1
+                    for m in range(5, 8):
+                        omega = rect(1, c * l * m / k)
+                        twiddle[j], twiddle[j + 1] = omega.real, omega.imag
+                        j += 2
+                    twiddle[j] = unpack('f', pack('i', -4 * 19))[0]
                     j += 1
             assert j == len(twiddle)
 
