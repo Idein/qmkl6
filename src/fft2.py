@@ -138,7 +138,84 @@ def qpu_fft2(asm, *, num_qpus, do_unroll):
     nop()
 
 
+def benchmark():
+
+    from cmath import rect
+    from math import pi
+    from struct import pack, unpack
+    from time import monotonic
+
+    from numpy.fft import fft, ifft
+    from numpy.random import default_rng
+
+    from videocore6.driver import Driver
+
+    def run(n, drv, unif, src, dst, tmp, twiddle, num_qpus, do_unroll,
+            code_offset=0):
+
+        ref = fft(src) if is_forward else ifft(src, norm='forward')
+
+        code = drv.program(qpu_fft2, num_qpus=num_qpus, do_unroll=do_unroll)
+
+        unif[0] = n
+        unif[1] = src.addresses()[0]
+        unif[2] = tmp.addresses()[0]
+        unif[3] = dst.addresses()[0]
+        if is_swapped:
+            unif[2], unif[3] = unif[3], unif[2]
+        unif[4] = twiddle.addresses()[0]
+
+        start = monotonic()
+        drv.execute(code, unif.addresses()[0], thread=num_qpus)
+        end = monotonic()
+
+        err_abs = abs(dst - ref)
+        err_rel = abs(err_abs / ref)
+
+        print(', '.join([f'n = 2^{ilog2(n)}', f'do_unroll = {do_unroll}',
+                         f'{end - start} seconds',
+                         f'{n / (end - start) * 1e-6} Melem/s',
+                         f'err_abs = [{min(err_abs)}, {max(err_abs)}]',
+                         f'err_rel = [{min(err_rel)}, {max(err_rel)}]']))
+
+    num_qpus = 8
+    is_forward = True
+    do_unroll = False
+
+    for ilog2n in range(1, 23):
+        n = pow(2, ilog2n)
+        is_swapped = ilog2n % 2 != 0
+
+        with Driver(data_area_size=8 * n * 4 + 4096) as drv:
+
+            unif = drv.alloc(5, dtype='uint32')
+            src = drv.alloc(n, dtype='csingle')
+            dst = drv.alloc(n, dtype='csingle')
+            tmp = drv.alloc(n, dtype='csingle')
+            twiddle = drv.alloc(n - 1, dtype='csingle')
+
+            rng = default_rng(0xdeadbeef)
+            src[:] = rng.random(n, 'float32') + rng.random(n, 'float32') * 1j
+            dst[:] = 0
+            tmp[:] = 0
+
+            c = (-1 if is_forward else 1) * pi
+            j = 0
+            for ilog2k in range(ilog2n - 1, -1, -1):
+                k = pow(2, ilog2k)
+                for l in range(k):
+                    twiddle[j] = rect(1, c * l / k)
+                    j += 1
+            assert j == len(twiddle)
+
+            run(n, drv, unif, src, dst, tmp, twiddle, num_qpus, do_unroll)
+
+
 def main():
+
+    if len(sys.argv) == 1:
+        benchmark()
+        return
 
     num_qpus, do_unroll = map(int, sys.argv[1:])
 
