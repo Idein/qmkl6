@@ -91,3 +91,44 @@ jobs:
           source /opt/intel/oneapi/setvars.sh
           cd build/
           ctest -V
+
+  build-package:
+    runs-on: ubuntu-latest
+    container: debian:bullseye-slim
+    env:
+      libdrm_v3d_version: 0.0.0
+      qmkl6_version: 0.0.0
+    strategy:
+      matrix:
+        include:
+          - arch: armhf
+            triplet: arm-linux-gnueabihf
+            cflags: -mcpu=cortex-a72 -mtune=cortex-a72 -mfloat-abi=hard -mfpu=neon-vfpv4
+          - arch: arm64
+            triplet: aarch64-linux-gnu
+            cflags: -mcpu=cortex-a72 -mtune=cortex-a72
+    steps:
+      - name: Install cross toolchain
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          dpkg --add-architecture '${{ matrix.arch }}'
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl git pkg-config cmake 'crossbuild-essential-${{ matrix.arch }}' python3-pip python3-numpy
+          apt-get clean
+          rm -rf /var/lib/apt/lists/*
+      - name: Download and unpack required packages
+        run: |
+          curl -sL 'https://github.com/Idein/libdrm_v3d/releases/download/v${{ env.libdrm_v3d_version }}/libdrm_v3d_${{ env.libdrm_v3d_version }}_${{ matrix.arch }}.deb' | dpkg-deb -x - /
+          python3 -m pip install --user git+https://github.com/Idein/py-videocore6.git
+      - uses: actions/checkout@v2
+      - name: Build package
+        run: |
+          PKG_CONFIG_PATH='/usr/lib/${{ matrix.triplet }}/pkgconfig/' cmake -B build/ -D BUILD_TESTING=FALSE -D CPACK_DEBIAN_PACKAGE_ARCHITECTURE='${{ matrix.arch }}' -D CMAKE_CXX_COMPILER='${{ matrix.triplet }}-g++' -D CMAKE_CXX_FLAGS='${{ matrix.cflags }}'
+          cmake --build build/ -t package -v
+      - name: Upload package
+        uses: actions/upload-artifact@v2
+        with:
+          name: qmkl6-${{ env.qmkl6_version }}-${{ matrix.arch }}
+          path: build/qmkl6_${{ env.qmkl6_version }}_${{ matrix.arch }}.deb
+          if-no-files-found: error
