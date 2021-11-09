@@ -73,7 +73,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates curl gnupg pkg-config make cmake binutils libstdc++-9-dev
+          apt-get install -y --no-install-recommends ca-certificates curl gnupg make cmake binutils libstdc++-9-dev
           curl --silent 'https://apt.repos.intel.com/intel-gpg-keys/GPG-PUB-KEY-INTEL-SW-PRODUCTS.PUB' | apt-key add -
           echo 'deb https://apt.repos.intel.com/oneapi all main' >>/etc/apt/sources.list.d/intel.list
           apt-get update
@@ -84,11 +84,8 @@ jobs:
       - name: Build tests
         run: |
           source /opt/intel/oneapi/setvars.sh
-          sed -e 's,^\(prefix\)=.*$,\1=/opt/intel/oneapi/mkl/latest,' -e 's,MKLROOT,prefix,g' -e 's,^Cflags:.*$,& -I"${prefix}/include/fftw",' -i /opt/intel/oneapi/mkl/latest/tools/pkgconfig/mkl-dynamic-lp64-iomp.pc
-          mkdir build/
-          cd build/
-          cmake .. -DCMAKE_CXX_COMPILER=icpx -DBUILD_TESTING=TRUE -DNO_QMKL6=TRUE
-          make
+          cmake -B build/ -D CMAKE_CXX_COMPILER=icpx -D mkl_FOUND=TRUE -D BUILD_TESTING=TRUE -D NO_QMKL6=TRUE
+          cmake --build build/ -v
       - name: Run tests
         run: |
           tail -n +1 /proc/cpuinfo /proc/meminfo

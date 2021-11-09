@@ -11,8 +11,10 @@
 #include <random>
 #include <tuple>
 
-#if defined(FFT_fftw3) || defined(FFT_mkl)
+#if defined(FFT_fftw3)
 #include <fftw3.h>
+#elif defined(FFT_mkl)
+#include <fftw/fftw3.h>
 #elif defined(FFT_qmkl6)
 #include <cblas-qmkl6.h>
 #else
