@@ -19,7 +19,7 @@ set(mkl_LINK_LIBRARIES -qmkl)
 
 if (NOT NO_QMKL6)
     set(qmkl6_FOUND TRUE)
-    set(qmkl6_LINK_LIBRARIES ${DRM_V3D_LINK_LIBRARIES} qmkl6)
+    set(qmkl6_LINK_LIBRARIES qmkl6 ${DRM_V3D_LINK_LIBRARIES})
 endif (NOT NO_QMKL6)
 
 foreach (blas IN ITEMS qmkl6 netlib openblas atlas mkl)
