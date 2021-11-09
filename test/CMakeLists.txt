@@ -9,10 +9,13 @@ add_compile_options(-pipe -W -Wall -Wextra -O2 -g -std=c++17)
 
 # libblas-dev, libopenblas-dev, libatlas-base-dev
 pkg_check_modules(netlib blas-netlib)
-pkg_check_modules(openblas blas-openblas)
+pkg_check_modules(openblas openblas)
 pkg_check_modules(atlas blas-atlas)
 
-pkg_check_modules(mkl mkl-dynamic-lp64-iomp)
+# MKL tests are not built by default for users installed ICPC/ICPX without MKL.
+# Set mkl_FOUND to TRUE to enable them.
+set(mkl_CFLAGS -qmkl)
+set(mkl_LINK_LIBRARIES -qmkl)
 
 if (NOT NO_QMKL6)
     set(qmkl6_FOUND TRUE)
