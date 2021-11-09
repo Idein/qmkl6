@@ -37,7 +37,7 @@ jobs:
 
   run-tests:
     runs-on: ubuntu-latest
-    container: debian:buster
+    container: debian:bullseye-slim
     steps:
       - uses: actions/checkout@v2
       - name: Install required packages
@@ -50,10 +50,8 @@ jobs:
           rm -rf /var/lib/apt/lists/*
       - name: Build tests
         run: |
-          mkdir build/
-          cd build/
-          cmake .. -DCMAKE_CXX_COMPILER=clang++ -DBUILD_TESTING=TRUE -DNO_QMKL6=TRUE
-          make
+          cmake -B build/ -D CMAKE_CXX_COMPILER=clang++ -D BUILD_TESTING=TRUE -D NO_QMKL6=TRUE
+          cmake --build build/ -v
       - name: Run tests
         run: |
           tail -n +1 /proc/cpuinfo /proc/meminfo
