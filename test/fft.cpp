@@ -114,63 +114,78 @@ class fft_stockham : public fft_impl<T> {
   }
 
  private:
-  template <unsigned r>
-  inline void butterfly(U x[r]);
+  template <unsigned r, typename DUMMY = void>
+  struct Butterfly {
+    void operator()(bool is_forward, U x[r]);
+  };
 
-  template <>
-  inline void butterfly<2>(U x[2]) {
-    const U c0 = x[0], c1 = x[1];
-    x[0] = c0 + c1;
-    x[1] = c0 - c1;
-  }
-
-  template <>
-  inline void butterfly<4>(U x[4]) {
-    if constexpr (0) {
-      /* DIF */
-      const U c0 = x[0] + x[2], c1 = x[1] + x[3], c2 = x[0] - x[2],
-              t = x[1] - x[3],
-              c3 = is_forward ? U{t.imag(), -t.real()} : U{-t.imag(), t.real()};
-      const U d0 = c0 + c1, d1 = c0 - c1, d2 = c2 + c3, d3 = c2 - c3;
-      x[0] = d0;
-      x[1] = d2;
-      x[2] = d1;
-      x[3] = d3;
-    } else {
-      /* DIT */
-      const U c0 = x[0], c1 = x[2], c2 = x[1], c3 = x[3];
-      const U d0 = c0 + c1, d1 = c0 - c1, d2 = c2 + c3, d3 = c2 - c3;
-      const U t =
-          is_forward ? U{d3.imag(), -d3.real()} : U{-d3.imag(), d3.real()};
-      x[0] = d0 + d2;
-      x[1] = d1 + t;
-      x[2] = d0 - d2;
-      x[3] = d1 - t;
+  template <typename DUMMY>
+  struct Butterfly<2, DUMMY> {
+    void operator()(bool, U x[2]) {
+      const U c0 = x[0], c1 = x[1];
+      x[0] = c0 + c1;
+      x[1] = c0 - c1;
     }
-  }
+  };
 
-  template <>
-  inline void butterfly<8>(U x[8]) {
-    const T s = std::sqrt(T(2)) / T(2);
-    const U omega_8_1 = U{s, is_forward ? -s : s},
-            omega_8_2 = U{T(0), is_forward ? T(-1) : T(1)},
-            omega_8_3 = U{-s, is_forward ? -s : s};
-    const U c0 = x[0] + x[4], c1 = x[1] + x[5], c2 = x[2] + x[6],
-            c3 = x[3] + x[7], c4 = x[0] - x[4], c5 = (x[1] - x[5]) * omega_8_1,
-            c6 = (x[2] - x[6]) * omega_8_2, c7 = (x[3] - x[7]) * omega_8_3;
-    const U d0 = c0 + c2, d1 = c1 + c3, d2 = c0 - c2,
-            d3 = (c1 - c3) * omega_8_2, d4 = c4 + c6, d5 = c5 + c7,
-            d6 = c4 - c6, d7 = (c5 - c7) * omega_8_2;
-    const U e0 = d0 + d1, e1 = d0 - d1, e2 = d2 + d3, e3 = d2 - d3,
-            e4 = d4 + d5, e5 = d4 - d5, e6 = d6 + d7, e7 = d6 - d7;
-    x[0] = e0;
-    x[1] = e4;
-    x[2] = e2;
-    x[3] = e6;
-    x[4] = e1;
-    x[5] = e5;
-    x[6] = e3;
-    x[7] = e7;
+  template <typename DUMMY>
+  struct Butterfly<4, DUMMY> {
+    void operator()(bool is_forward, U x[4]) {
+      if constexpr (0) {
+        /* DIF */
+        const U c0 = x[0] + x[2], c1 = x[1] + x[3], c2 = x[0] - x[2],
+                t = x[1] - x[3],
+                c3 = is_forward ? U{t.imag(), -t.real()}
+                                : U{-t.imag(), t.real()};
+        const U d0 = c0 + c1, d1 = c0 - c1, d2 = c2 + c3, d3 = c2 - c3;
+        x[0] = d0;
+        x[1] = d2;
+        x[2] = d1;
+        x[3] = d3;
+      } else {
+        /* DIT */
+        const U c0 = x[0], c1 = x[2], c2 = x[1], c3 = x[3];
+        const U d0 = c0 + c1, d1 = c0 - c1, d2 = c2 + c3, d3 = c2 - c3;
+        const U t =
+            is_forward ? U{d3.imag(), -d3.real()} : U{-d3.imag(), d3.real()};
+        x[0] = d0 + d2;
+        x[1] = d1 + t;
+        x[2] = d0 - d2;
+        x[3] = d1 - t;
+      }
+    }
+  };
+
+  template <typename DUMMY>
+  struct Butterfly<8, DUMMY> {
+    void operator()(bool is_forward, U x[8]) {
+      const T s = std::sqrt(T(2)) / T(2);
+      const U omega_8_1 = U{s, is_forward ? -s : s},
+              omega_8_2 = U{T(0), is_forward ? T(-1) : T(1)},
+              omega_8_3 = U{-s, is_forward ? -s : s};
+      const U c0 = x[0] + x[4], c1 = x[1] + x[5], c2 = x[2] + x[6],
+              c3 = x[3] + x[7], c4 = x[0] - x[4],
+              c5 = (x[1] - x[5]) * omega_8_1, c6 = (x[2] - x[6]) * omega_8_2,
+              c7 = (x[3] - x[7]) * omega_8_3;
+      const U d0 = c0 + c2, d1 = c1 + c3, d2 = c0 - c2,
+              d3 = (c1 - c3) * omega_8_2, d4 = c4 + c6, d5 = c5 + c7,
+              d6 = c4 - c6, d7 = (c5 - c7) * omega_8_2;
+      const U e0 = d0 + d1, e1 = d0 - d1, e2 = d2 + d3, e3 = d2 - d3,
+              e4 = d4 + d5, e5 = d4 - d5, e6 = d6 + d7, e7 = d6 - d7;
+      x[0] = e0;
+      x[1] = e4;
+      x[2] = e2;
+      x[3] = e6;
+      x[4] = e1;
+      x[5] = e5;
+      x[6] = e3;
+      x[7] = e7;
+    }
+  };
+
+  template <unsigned r>
+  inline void butterfly(U x[r]) {
+    return Butterfly<r>()(is_forward, x);
   }
 
  public:
@@ -409,9 +424,9 @@ static int test_fft_c2c_single(const enum fft_impl<T>::domain domain,
   std::uniform_real_distribution<T> dist;
 
   printf("%s %s: n = %7d: ",
-         (domain == fft_impl<T>::DOMAIN_COMPLEX)
-             ? "c2c"
-             : (direction == fft_impl<T>::DIRECTION_FORWARD) ? "r2c" : "c2r",
+         (domain == fft_impl<T>::DOMAIN_COMPLEX)         ? "c2c"
+         : (direction == fft_impl<T>::DIRECTION_FORWARD) ? "r2c"
+                                                         : "c2r",
          (direction == fft_impl<T>::DIRECTION_FORWARD) ? "forw" : "back", n);
 
   U *in0 = new U[n], *out0 = new U[n];
